@@ -36,19 +36,22 @@ const SearchResults = ({ query }: SearchResultsProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCandidates();
-  }, []);
+    if (query) {
+      searchCandidatesWithAI();
+    }
+  }, [query]);
 
-  const fetchCandidates = async () => {
+  const searchCandidatesWithAI = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('candidates')
-        .select('*');
+      
+      const { data, error } = await supabase.functions.invoke('ai-search', {
+        body: { query }
+      });
 
       if (error) {
         toast({
-          title: "Error fetching candidates",
+          title: "Search error",
           description: error.message,
           variant: "destructive"
         });
@@ -56,32 +59,33 @@ const SearchResults = ({ query }: SearchResultsProps) => {
       }
 
       // Transform the data to match the expected format
-      const transformedCandidates: Candidate[] = (data || []).map((candidate, index) => ({
+      const transformedCandidates: Candidate[] = (data.candidates || []).map((candidate) => ({
         id: candidate.id,
         name: candidate.name || 'Unknown',
         title: candidate.title || 'No title',
         location: candidate.location || 'No location',
         email: candidate.email,
         phone: candidate.phone || 'No phone',
-        score: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
+        score: candidate.score || 0,
         skills: candidate.skills || [],
         experience: candidate.experience || 'Not specified',
         availability: candidate.availability || 'Available',
-        workPreference: ['Remote', 'Hybrid', 'On-site'][Math.floor(Math.random() * 3)] as 'Remote' | 'Hybrid' | 'On-site',
+        workPreference: candidate.workPreference || 'Remote',
         summary: candidate.resume || 'No summary available',
-        match_reasons: [
-          'Profile matches search criteria',
-          `Located in ${candidate.location || 'specified location'}`,
-          'Strong skill set alignment',
-          'Available for new opportunities'
-        ]
+        match_reasons: candidate.match_reasons || ['Profile matches search criteria']
       }));
 
       setCandidates(transformedCandidates);
+      
+      toast({
+        title: "AI Search Complete",
+        description: `Found ${transformedCandidates.length} matching candidates`,
+      });
     } catch (error) {
+      console.error('Search error:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch candidates",
+        description: "Failed to search candidates",
         variant: "destructive"
       });
     } finally {
@@ -104,7 +108,10 @@ const SearchResults = ({ query }: SearchResultsProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">AI is analyzing candidates...</p>
+        </div>
       </div>
     );
   }
@@ -114,9 +121,9 @@ const SearchResults = ({ query }: SearchResultsProps) => {
       {/* Results Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Search Results</h3>
+          <h3 className="text-2xl font-bold text-gray-900">AI Search Results</h3>
           <p className="text-gray-600">
-            Found {sortedCandidates.length} candidates matching "{query}"
+            Found {sortedCandidates.length} candidates matching "{query}" using AI analysis
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -161,6 +168,9 @@ const SearchResults = ({ query }: SearchResultsProps) => {
         <Badge variant="secondary" className="bg-purple-50 text-purple-700">
           {sortedCandidates.filter(c => c.workPreference === 'Remote').length} Remote workers
         </Badge>
+        <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+          🤖 AI-Powered Search
+        </Badge>
       </div>
 
       {/* Candidate Cards */}
@@ -168,6 +178,7 @@ const SearchResults = ({ query }: SearchResultsProps) => {
         {sortedCandidates.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No candidates found matching your criteria.</p>
+            <p className="text-sm text-gray-400 mt-2">Try adjusting your search terms or filters.</p>
           </div>
         ) : (
           sortedCandidates.map((candidate) => (
