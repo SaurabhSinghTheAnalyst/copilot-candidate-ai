@@ -38,55 +38,46 @@ export type Database = {
       }
       candidates: {
         Row: {
-          availability: string
-          created_at: string
-          education: string | null
+          availability: string | null
+          created_at: string | null
           email: string
-          experience: string
+          experience: string | null
           id: string
-          location: string
-          name: string
+          location: string | null
+          name: string | null
           phone: string | null
-          profile_image: string | null
           resume: string | null
-          score: number
-          skills: string[]
-          title: string
-          updated_at: string
+          skills: string[] | null
+          title: string | null
+          updated_at: string | null
         }
         Insert: {
-          availability: string
-          created_at?: string
-          education?: string | null
+          availability?: string | null
+          created_at?: string | null
           email: string
-          experience: string
+          experience?: string | null
           id?: string
-          location: string
-          name: string
+          location?: string | null
+          name?: string | null
           phone?: string | null
-          profile_image?: string | null
           resume?: string | null
-          score?: number
-          skills?: string[]
-          title: string
-          updated_at?: string
+          skills?: string[] | null
+          title?: string | null
+          updated_at?: string | null
         }
         Update: {
-          availability?: string
-          created_at?: string
-          education?: string | null
+          availability?: string | null
+          created_at?: string | null
           email?: string
-          experience?: string
+          experience?: string | null
           id?: string
-          location?: string
-          name?: string
+          location?: string | null
+          name?: string | null
           phone?: string | null
-          profile_image?: string | null
           resume?: string | null
-          score?: number
-          skills?: string[]
-          title?: string
-          updated_at?: string
+          skills?: string[] | null
+          title?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

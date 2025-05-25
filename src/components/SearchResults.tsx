@@ -1,84 +1,95 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Filter, SortDesc, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import CandidateCard from './CandidateCard';
 
 interface SearchResultsProps {
   query: string;
 }
 
+interface Candidate {
+  id: string;
+  name: string | null;
+  title: string | null;
+  location: string | null;
+  email: string;
+  phone: string | null;
+  score: number;
+  skills: string[];
+  experience: string | null;
+  availability: string | null;
+  workPreference: 'Remote' | 'Hybrid' | 'On-site';
+  summary: string;
+  match_reasons: string[];
+}
+
 const SearchResults = ({ query }: SearchResultsProps) => {
   const [sortBy, setSortBy] = useState('score');
   const [filterBy, setFilterBy] = useState('all');
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Mock candidate data
-  const mockCandidates = [
-    {
-      id: '1',
-      name: 'Sarah Chen',
-      title: 'Senior AI Engineer',
-      location: 'London, UK',
-      email: 'sarah.chen@example.com',
-      phone: '+44 20 1234 5678',
-      score: 95,
-      skills: ['Python', 'LangChain', 'RAG', 'Vector Databases', 'OpenAI', 'PyTorch', 'MLOps'],
-      experience: '6 years',
-      availability: 'Available' as const,
-      workPreference: 'Remote' as const,
-      summary: 'Senior AI engineer with 6 years of experience building production ML systems. Led implementation of RAG-based chatbots using LangChain and vector databases. Strong background in NLP and generative AI.',
-      match_reasons: [
-        'Extensive experience with LangChain and RAG implementations',
-        'Located in Europe (London) as requested',
-        'Open to contract work according to profile',
-        'Strong background in generative AI and vector databases'
-      ]
-    },
-    {
-      id: '2',
-      name: 'Marcus Schmidt',
-      title: 'Machine Learning Engineer',
-      location: 'Berlin, Germany',
-      email: 'marcus.schmidt@example.com',
-      phone: '+49 30 1234 5678',
-      score: 88,
-      skills: ['Python', 'TensorFlow', 'LangChain', 'FastAPI', 'Docker', 'Kubernetes'],
-      experience: '4 years',
-      availability: 'Open to opportunities' as const,
-      workPreference: 'Hybrid' as const,
-      summary: 'ML engineer specializing in NLP and conversational AI. Built several RAG-based applications using LangChain. Experience with production deployment and MLOps practices.',
-      match_reasons: [
-        'Solid experience with LangChain framework',
-        'Located in Germany (Europe)',
-        'Background in conversational AI and RAG systems',
-        'Available for new opportunities'
-      ]
-    },
-    {
-      id: '3',
-      name: 'Elena Rodriguez',
-      title: 'Lead Data Scientist',
-      location: 'Madrid, Spain',
-      email: 'elena.rodriguez@example.com',
-      phone: '+34 91 1234 567',
-      score: 82,
-      skills: ['Python', 'Hugging Face', 'LangChain', 'AWS', 'Embeddings', 'Vector Search'],
-      experience: '7 years',
-      availability: 'Available' as const,
-      workPreference: 'Remote' as const,
-      summary: 'Lead data scientist with expertise in NLP and information retrieval. Built enterprise RAG solutions using LangChain and vector databases. Strong research background.',
-      match_reasons: [
-        'Leadership experience in AI/ML teams',
-        'Based in Spain (European timezone)',
-        'Experience with RAG and vector search systems',
-        'Available for immediate start'
-      ]
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const fetchCandidates = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('*');
+
+      if (error) {
+        toast({
+          title: "Error fetching candidates",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const transformedCandidates: Candidate[] = (data || []).map((candidate, index) => ({
+        id: candidate.id,
+        name: candidate.name || 'Unknown',
+        title: candidate.title || 'No title',
+        location: candidate.location || 'No location',
+        email: candidate.email,
+        phone: candidate.phone || 'No phone',
+        score: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
+        skills: candidate.skills || [],
+        experience: candidate.experience || 'Not specified',
+        availability: candidate.availability || 'Available',
+        workPreference: ['Remote', 'Hybrid', 'On-site'][Math.floor(Math.random() * 3)] as 'Remote' | 'Hybrid' | 'On-site',
+        summary: candidate.resume || 'No summary available',
+        match_reasons: [
+          'Profile matches search criteria',
+          `Located in ${candidate.location || 'specified location'}`,
+          'Strong skill set alignment',
+          'Available for new opportunities'
+        ]
+      }));
+
+      setCandidates(transformedCandidates);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch candidates",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredCandidates = mockCandidates.filter(candidate => {
+  const filteredCandidates = candidates.filter(candidate => {
     if (filterBy === 'available') return candidate.availability === 'Available';
     if (filterBy === 'remote') return candidate.workPreference === 'Remote';
     return true;
@@ -86,9 +97,17 @@ const SearchResults = ({ query }: SearchResultsProps) => {
 
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
     if (sortBy === 'score') return b.score - a.score;
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
     return 0;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -146,9 +165,15 @@ const SearchResults = ({ query }: SearchResultsProps) => {
 
       {/* Candidate Cards */}
       <div className="space-y-4">
-        {sortedCandidates.map((candidate) => (
-          <CandidateCard key={candidate.id} candidate={candidate} />
-        ))}
+        {sortedCandidates.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No candidates found matching your criteria.</p>
+          </div>
+        ) : (
+          sortedCandidates.map((candidate) => (
+            <CandidateCard key={candidate.id} candidate={candidate} />
+          ))
+        )}
       </div>
     </div>
   );

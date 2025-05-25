@@ -8,15 +8,15 @@ import { useToast } from '@/hooks/use-toast';
 interface CandidateCardProps {
   candidate: {
     id: string;
-    name: string;
-    title: string;
-    location: string;
+    name: string | null;
+    title: string | null;
+    location: string | null;
     email: string;
-    phone: string;
+    phone: string | null;
     score: number;
     skills: string[];
-    experience: string;
-    availability: 'Available' | 'Open to opportunities' | 'Not looking';
+    experience: string | null;
+    availability: string | null;
     workPreference: 'Remote' | 'Hybrid' | 'On-site';
     summary: string;
     match_reasons: string[];
@@ -33,7 +33,7 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
     return 'text-gray-600 bg-gray-50 border-gray-200';
   };
 
-  const getAvailabilityColor = (availability: string) => {
+  const getAvailabilityColor = (availability: string | null) => {
     if (availability === 'Available') return 'bg-green-100 text-green-700';
     if (availability === 'Open to opportunities') return 'bg-blue-100 text-blue-700';
     return 'bg-gray-100 text-gray-700';
@@ -60,20 +60,20 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-xl font-semibold text-gray-900">{candidate.name}</h3>
+              <h3 className="text-xl font-semibold text-gray-900">{candidate.name || 'Unknown'}</h3>
               <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getScoreColor(candidate.score)}`}>
                 <Star className="w-4 h-4 inline mr-1" />
                 {candidate.score}% Match
               </div>
             </div>
-            <p className="text-gray-600 font-medium mb-2">{candidate.title}</p>
+            <p className="text-gray-600 font-medium mb-2">{candidate.title || 'No title'}</p>
             <div className="flex items-center text-sm text-gray-500 space-x-4">
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
-                {candidate.location}
+                {candidate.location || 'No location'}
               </div>
               <Badge variant="secondary" className={getAvailabilityColor(candidate.availability)}>
-                {candidate.availability}
+                {candidate.availability || 'Not specified'}
               </Badge>
               <Badge variant="outline">
                 {candidate.workPreference}
@@ -88,13 +88,19 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
         <div>
           <h4 className="text-sm font-medium text-gray-700 mb-2">Key Skills</h4>
           <div className="flex flex-wrap gap-2">
-            {candidate.skills.slice(0, 6).map((skill) => (
-              <Badge key={skill} variant="secondary" className="bg-blue-50 text-blue-700">
-                {skill}
-              </Badge>
-            ))}
-            {candidate.skills.length > 6 && (
-              <Badge variant="outline">+{candidate.skills.length - 6} more</Badge>
+            {candidate.skills && candidate.skills.length > 0 ? (
+              <>
+                {candidate.skills.slice(0, 6).map((skill) => (
+                  <Badge key={skill} variant="secondary" className="bg-blue-50 text-blue-700">
+                    {skill}
+                  </Badge>
+                ))}
+                {candidate.skills.length > 6 && (
+                  <Badge variant="outline">+{candidate.skills.length - 6} more</Badge>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">No skills listed</p>
             )}
           </div>
         </div>
@@ -134,18 +140,20 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
                   <Copy className="w-3 h-3" />
                 </Button>
               </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">{candidate.phone}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleCopyContact('phone', candidate.phone)}
-                  className="h-6 w-6 p-0"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
+              {candidate.phone && (
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">{candidate.phone}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleCopyContact('phone', candidate.phone!)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <Button size="sm" variant="outline">
