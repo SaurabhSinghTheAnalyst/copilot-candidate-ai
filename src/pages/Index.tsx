@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, Upload, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import CandidateCard from '@/components/CandidateCard';
+import CandidateCarousel from '@/components/CandidateCarousel';
 import UploadArea from '@/components/UploadArea';
 import SearchResults from '@/components/SearchResults';
 import DashboardStats from '@/components/DashboardStats';
@@ -161,6 +163,13 @@ const Index = () => {
                 ))}
               </div>
             </div>
+
+            {/* Candidate Carousel */}
+            {!showResults && (
+              <div className="mt-12">
+                <CandidateCarousel />
+              </div>
+            )}
 
             {/* Search Results */}
             {showResults && <SearchResults query={searchQuery} />}
