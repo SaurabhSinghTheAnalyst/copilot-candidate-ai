@@ -1,10 +1,25 @@
 
 import { useState, useCallback } from 'react';
-import { Upload, File, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, File, CheckCircle, AlertCircle, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+
+interface CandidateInfo {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  interestedIn: string;
+  requiresVisa: boolean;
+  visaExpiry?: string;
+}
 
 interface UploadedFile {
   id: string;
@@ -22,6 +37,16 @@ interface UploadedFile {
 const UploadArea = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [candidateInfo, setCandidateInfo] = useState<CandidateInfo>({
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    interestedIn: '',
+    requiresVisa: false,
+    visaExpiry: undefined
+  });
   const { toast } = useToast();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -71,9 +96,9 @@ const UploadArea = () => {
                 ...f, 
                 status: 'complete',
                 extractedData: {
-                  name: 'John Doe',
+                  name: candidateInfo.name || 'John Doe',
                   skills: ['React', 'Node.js', 'TypeScript'],
-                  location: 'New York, NY'
+                  location: candidateInfo.location || 'New York, NY'
                 }
               }
             : f
@@ -91,13 +116,40 @@ const UploadArea = () => {
     e.preventDefault();
     setIsDragOver(false);
     
+    if (!isFormValid()) {
+      toast({
+        title: "Please fill out candidate information",
+        description: "Complete the form before uploading files",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const droppedFiles = Array.from(e.dataTransfer.files);
     droppedFiles.forEach(processFile);
-  }, []);
+  }, [candidateInfo]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isFormValid()) {
+      toast({
+        title: "Please fill out candidate information",
+        description: "Complete the form before uploading files",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const selectedFiles = Array.from(e.target.files || []);
     selectedFiles.forEach(processFile);
+  };
+
+  const isFormValid = () => {
+    return candidateInfo.name && 
+           candidateInfo.email && 
+           candidateInfo.phone && 
+           candidateInfo.location && 
+           candidateInfo.interestedIn &&
+           (!candidateInfo.requiresVisa || candidateInfo.visaExpiry);
   };
 
   const removeFile = (fileId: string) => {
@@ -141,9 +193,118 @@ const UploadArea = () => {
       <div className="text-center space-y-4">
         <h2 className="text-3xl font-bold text-gray-900">Upload Resumes</h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Upload candidate resumes and let AI extract skills, experience, and contact information automatically
+          Fill out candidate information and upload resumes. AI will extract skills, experience, and contact information automatically.
         </p>
       </div>
+
+      {/* Candidate Information Form */}
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2">
+            <User className="w-5 h-5" />
+            <span>Candidate Information</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                placeholder="Enter full name"
+                value={candidateInfo.name}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter email address"
+                value={candidateInfo.email}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                placeholder="Enter phone number"
+                value={candidateInfo.phone}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location *</Label>
+              <Input
+                id="location"
+                placeholder="City, Country"
+                value={candidateInfo.location}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, location: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Interested In *</Label>
+            <RadioGroup 
+              value={candidateInfo.interestedIn} 
+              onValueChange={(value) => setCandidateInfo(prev => ({ ...prev, interestedIn: value }))}
+              className="flex flex-wrap gap-6"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="contract" id="contract" />
+                <Label htmlFor="contract">Contract</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="full-time" id="full-time" />
+                <Label htmlFor="full-time">Full-time</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="part-time" id="part-time" />
+                <Label htmlFor="part-time">Part-time</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="casual" id="casual" />
+                <Label htmlFor="casual">Casual</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="requiresVisa"
+                checked={candidateInfo.requiresVisa}
+                onCheckedChange={(checked) => 
+                  setCandidateInfo(prev => ({ 
+                    ...prev, 
+                    requiresVisa: checked as boolean,
+                    visaExpiry: checked ? prev.visaExpiry : undefined
+                  }))
+                }
+              />
+              <Label htmlFor="requiresVisa">Do you require a visa to work at this job location?</Label>
+            </div>
+
+            {candidateInfo.requiresVisa && (
+              <div className="space-y-2 ml-6">
+                <Label htmlFor="visaExpiry">Visa Expiry Date *</Label>
+                <Input
+                  id="visaExpiry"
+                  type="date"
+                  value={candidateInfo.visaExpiry || ''}
+                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, visaExpiry: e.target.value }))}
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Upload Area */}
       <Card className="max-w-2xl mx-auto">
@@ -153,6 +314,8 @@ const UploadArea = () => {
               isDragOver 
                 ? 'border-blue-500 bg-blue-50' 
                 : 'border-gray-300 hover:border-gray-400'
+            } ${
+              !isFormValid() ? 'opacity-50 pointer-events-none' : ''
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -165,6 +328,11 @@ const UploadArea = () => {
             <p className="text-gray-600 mb-6">
               Support for PDF, DOC, and DOCX files up to 10MB each
             </p>
+            {!isFormValid() && (
+              <p className="text-red-500 text-sm mb-4">
+                Please complete the candidate information form above before uploading files
+              </p>
+            )}
             <div className="space-y-3">
               <input
                 type="file"
@@ -173,9 +341,14 @@ const UploadArea = () => {
                 onChange={handleFileSelect}
                 className="hidden"
                 id="file-upload"
+                disabled={!isFormValid()}
               />
               <label htmlFor="file-upload">
-                <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                <Button 
+                  asChild 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  disabled={!isFormValid()}
+                >
                   <span className="cursor-pointer">Choose Files</span>
                 </Button>
               </label>
