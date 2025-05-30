@@ -9,230 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      Candidate_Info: {
+      candidate_info: {
         Row: {
-          Country: string | null
-          Email: string
-          Name: string | null
-          "Open To": string | null
-          Phone: string | null
-          Resume: string | null
-        }
-        Insert: {
-          Country?: string | null
-          Email: string
-          Name?: string | null
-          "Open To"?: string | null
-          Phone?: string | null
-          Resume?: string | null
-        }
-        Update: {
-          Country?: string | null
-          Email?: string
-          Name?: string | null
-          "Open To"?: string | null
-          Phone?: string | null
-          Resume?: string | null
-        }
-        Relationships: []
-      }
-      candidate_skills: {
-        Row: {
-          candidate_id: string | null
-          created_at: string
-          experience_level: string | null
-          id: string
-          skill: string
-        }
-        Insert: {
-          candidate_id?: string | null
-          created_at?: string
-          experience_level?: string | null
-          id?: string
-          skill: string
-        }
-        Update: {
-          candidate_id?: string | null
-          created_at?: string
-          experience_level?: string | null
-          id?: string
-          skill?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "candidate_skills_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      candidates: {
-        Row: {
-          availability: string | null
           created_at: string | null
           email: string
-          experience: string | null
-          id: string
-          location: string | null
-          name: string | null
-          phone: string | null
+          interested_in: string
+          location: string
+          name: string
+          phone: string
+          requires_visa: boolean | null
           resume: string | null
-          resume_text: string | null
-          skills: string[] | null
-          title: string | null
-          updated_at: string | null
           user_id: string | null
+          visa_expiry: string | null
         }
         Insert: {
-          availability?: string | null
           created_at?: string | null
           email: string
-          experience?: string | null
-          id?: string
-          location?: string | null
-          name?: string | null
-          phone?: string | null
+          interested_in: string
+          location: string
+          name: string
+          phone: string
+          requires_visa?: boolean | null
           resume?: string | null
-          resume_text?: string | null
-          skills?: string[] | null
-          title?: string | null
-          updated_at?: string | null
           user_id?: string | null
+          visa_expiry?: string | null
         }
         Update: {
-          availability?: string | null
           created_at?: string | null
           email?: string
-          experience?: string | null
-          id?: string
-          location?: string | null
-          name?: string | null
-          phone?: string | null
+          interested_in?: string
+          location?: string
+          name?: string
+          phone?: string
+          requires_visa?: boolean | null
           resume?: string | null
-          resume_text?: string | null
-          skills?: string[] | null
-          title?: string | null
-          updated_at?: string | null
           user_id?: string | null
+          visa_expiry?: string | null
         }
         Relationships: []
-      }
-      outreach_templates: {
-        Row: {
-          candidate_id: string | null
-          created_at: string
-          id: string
-          template_text: string
-        }
-        Insert: {
-          candidate_id?: string | null
-          created_at?: string
-          id?: string
-          template_text: string
-        }
-        Update: {
-          candidate_id?: string | null
-          created_at?: string
-          id?: string
-          template_text?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "outreach_templates_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          company: string | null
-          created_at: string
-          email: string
-          full_name: string | null
-          id: string
-          role: string | null
-          updated_at: string
-        }
-        Insert: {
-          company?: string | null
-          created_at?: string
-          email: string
-          full_name?: string | null
-          id: string
-          role?: string | null
-          updated_at?: string
-        }
-        Update: {
-          company?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string | null
-          id?: string
-          role?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      search_history: {
-        Row: {
-          created_at: string
-          id: string
-          query: string
-          results_count: number | null
-          structured_query: Json | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          query: string
-          results_count?: number | null
-          structured_query?: Json | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          query?: string
-          results_count?: number | null
-          structured_query?: Json | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      vector_embeddings: {
-        Row: {
-          candidate_id: string | null
-          created_at: string
-          embedding: string | null
-          id: string
-        }
-        Insert: {
-          candidate_id?: string | null
-          created_at?: string
-          embedding?: string | null
-          id?: string
-        }
-        Update: {
-          candidate_id?: string | null
-          created_at?: string
-          embedding?: string | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vector_embeddings_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
