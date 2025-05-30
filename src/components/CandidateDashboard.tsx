@@ -1,237 +1,174 @@
 
 import { useState } from 'react';
-import { FileText, Bookmark, Send, Eye, TrendingUp, Calendar } from 'lucide-react';
+import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EditProfile from './EditProfile';
 
 const CandidateDashboard = () => {
-  const [profileCompleteness] = useState(75);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const stats = [
-    {
-      title: "Profile Views",
-      value: "24",
-      change: "+12%",
-      icon: Eye,
-      color: "text-blue-600"
-    },
-    {
-      title: "Applications Sent",
-      value: "8",
-      change: "+3",
-      icon: Send,
-      color: "text-green-600"
-    },
-    {
-      title: "Saved Jobs",
-      value: "15",
-      change: "+5",
-      icon: Bookmark,
-      color: "text-purple-600"
-    },
-    {
-      title: "Interview Invites",
-      value: "3",
-      change: "+2",
-      icon: Calendar,
-      color: "text-orange-600"
-    }
-  ];
-
-  const recentApplications = [
-    {
-      id: 1,
-      position: "Senior React Developer",
-      company: "TechCorp Inc.",
-      status: "Under Review",
-      appliedDate: "2 days ago",
-      statusColor: "bg-yellow-100 text-yellow-800"
-    },
-    {
-      id: 2,
-      position: "Full Stack Engineer",
-      company: "StartupXYZ",
-      status: "Interview Scheduled",
-      appliedDate: "1 week ago",
-      statusColor: "bg-green-100 text-green-800"
-    },
-    {
-      id: 3,
-      position: "Frontend Developer",
-      company: "Design Agency",
-      status: "Applied",
-      appliedDate: "3 days ago",
-      statusColor: "bg-blue-100 text-blue-800"
-    }
-  ];
-
-  const savedJobs = [
-    {
-      id: 1,
-      title: "Product Manager",
-      company: "Innovation Labs",
-      location: "Remote",
-      postedDate: "1 day ago"
-    },
-    {
-      id: 2,
-      title: "UX Designer",
-      company: "Creative Studio",
-      location: "San Francisco, CA",
-      postedDate: "3 days ago"
-    },
-    {
-      id: 3,
-      title: "Software Engineer",
-      company: "Tech Solutions",
-      location: "New York, NY",
-      postedDate: "5 days ago"
-    }
-  ];
+  // Mock user data
+  const candidateData = {
+    name: "Alex Johnson",
+    email: "alex.johnson@email.com",
+    phone: "+1 (555) 123-4567",
+    location: "San Francisco, CA",
+    summary: "Experienced software developer with 5+ years in web development",
+    experience: "5 years",
+    skills: ["React", "TypeScript", "Node.js", "Python", "AWS"],
+    applications: 12,
+    interviews: 3,
+    profileViews: 45
+  };
 
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">My Profile Dashboard</h2>
+        <h2 className="text-3xl font-bold text-gray-900">My Profile</h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Track your job search progress and manage your applications
+          Manage your profile, track applications, and update your information
         </p>
       </div>
 
-      {/* Profile Completeness */}
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5" />
-            <span>Profile Completeness</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Profile Progress</span>
-            <span className="text-sm text-gray-500">{profileCompleteness}% Complete</span>
-          </div>
-          <Progress value={profileCompleteness} className="w-full" />
-          <div className="text-sm text-gray-600">
-            {profileCompleteness < 100 && (
-              <p>Complete your profile to increase visibility to recruiters!</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <User className="w-4 h-4" />
+            <span>Profile Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="edit" className="flex items-center space-x-2">
+            <Edit className="w-4 h-4" />
+            <span>Edit Profile</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-6">
+        <TabsContent value="overview" className="space-y-6">
+          {/* Profile Summary Card */}
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-green-600">{stat.change}</p>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="w-5 h-5" />
+                  <span>Profile Summary</span>
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveTab('edit')}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-start space-x-6">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center">
+                  <User className="w-12 h-12 text-white" />
                 </div>
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">{candidateData.name}</h3>
+                    <p className="text-gray-600">{candidateData.summary}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Mail className="w-4 h-4" />
+                      <span>{candidateData.email}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Phone className="w-4 h-4" />
+                      <span>{candidateData.phone}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{candidateData.location}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Briefcase className="w-4 h-4" />
+                      <span>{candidateData.experience} experience</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-900">Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {candidateData.skills.map((skill) => (
+                        <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Applications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Send className="w-5 h-5" />
-              <span>Recent Applications</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentApplications.map((application) => (
-              <div key={application.id} className="border rounded-lg p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium">{application.position}</h4>
-                    <p className="text-sm text-gray-600">{application.company}</p>
-                    <p className="text-xs text-gray-500">Applied {application.appliedDate}</p>
-                  </div>
-                  <Badge className={application.statusColor}>{application.status}</Badge>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-blue-600" />
                 </div>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              View All Applications
-            </Button>
-          </CardContent>
-        </Card>
+                <h3 className="text-2xl font-bold text-gray-900">{candidateData.applications}</h3>
+                <p className="text-gray-600">Applications Sent</p>
+              </CardContent>
+            </Card>
 
-        {/* Saved Jobs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Bookmark className="w-5 h-5" />
-              <span>Saved Jobs</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {savedJobs.map((job) => (
-              <div key={job.id} className="border rounded-lg p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium">{job.title}</h4>
-                    <p className="text-sm text-gray-600">{job.company}</p>
-                    <p className="text-xs text-gray-500">{job.location} • Posted {job.postedDate}</p>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    Apply
-                  </Button>
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-6 h-6 text-green-600" />
                 </div>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              View All Saved Jobs
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+                <h3 className="text-2xl font-bold text-gray-900">{candidateData.interviews}</h3>
+                <p className="text-gray-600">Interviews Scheduled</p>
+              </CardContent>
+            </Card>
 
-      {/* Uploaded Documents */}
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="w-5 h-5" />
-            <span>My Documents</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <FileText className="w-8 h-8 text-blue-500" />
-                <div>
-                  <h4 className="font-medium">Resume.pdf</h4>
-                  <p className="text-sm text-gray-500">Uploaded 2 days ago</p>
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <User className="w-6 h-6 text-purple-600" />
                 </div>
-              </div>
-            </div>
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <FileText className="w-8 h-8 text-green-500" />
-                <div>
-                  <h4 className="font-medium">Cover Letter.pdf</h4>
-                  <p className="text-sm text-gray-500">Uploaded 1 week ago</p>
-                </div>
-              </div>
-            </div>
+                <h3 className="text-2xl font-bold text-gray-900">{candidateData.profileViews}</h3>
+                <p className="text-gray-600">Profile Views</p>
+              </CardContent>
+            </Card>
           </div>
-          <Button variant="outline" className="w-full">
-            Upload New Document
-          </Button>
-        </CardContent>
-      </Card>
+
+          {/* Recent Activity */}
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { action: "Applied to Senior React Developer at TechCorp", time: "2 hours ago" },
+                  { action: "Profile viewed by Innovation Labs recruiter", time: "1 day ago" },
+                  { action: "Interview scheduled with Design Studio", time: "2 days ago" },
+                  { action: "Updated profile summary", time: "3 days ago" }
+                ].map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-900">{activity.action}</span>
+                    <span className="text-sm text-gray-500">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="edit">
+          <EditProfile />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
