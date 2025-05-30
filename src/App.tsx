@@ -26,7 +26,7 @@ const App: React.FC = () => (
             <Route 
               path="/" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="recruiter">
                   <Index />
                 </ProtectedRoute>
               } 
@@ -34,7 +34,7 @@ const App: React.FC = () => (
             <Route 
               path="/candidate" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="candidate">
                   <Candidate />
                 </ProtectedRoute>
               } 

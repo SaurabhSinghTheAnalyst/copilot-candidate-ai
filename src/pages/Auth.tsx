@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, Mail, Lock, User } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Zap, Mail, Lock, User, Users, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,8 +55,9 @@ const Auth = () => {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
+    const role = formData.get('role') as string;
 
-    const { error } = await signUp(email, password, fullName);
+    const { error } = await signUp(email, password, fullName, role);
     
     if (error) {
       toast({
@@ -200,6 +202,29 @@ const Auth = () => {
                         minLength={6}
                       />
                     </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Label>I am signing up as:</Label>
+                    <RadioGroup defaultValue="candidate" name="role" className="space-y-3">
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value="candidate" id="candidate" />
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <Label htmlFor="candidate" className="font-normal cursor-pointer">
+                            Candidate - Looking for opportunities
+                          </Label>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value="recruiter" id="recruiter" />
+                        <div className="flex items-center space-x-2">
+                          <Briefcase className="w-4 h-4 text-gray-500" />
+                          <Label htmlFor="recruiter" className="font-normal cursor-pointer">
+                            Recruiter - Looking for talent
+                          </Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
                   </div>
                   <Button
                     type="submit"
