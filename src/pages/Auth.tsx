@@ -25,54 +25,86 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    try {
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
 
-    const { error } = await signIn(email, password);
-    
-    if (error) {
+      console.log('Sign in attempt for:', email);
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        toast({
+          title: "Sign in failed",
+          description: error.message || "An error occurred during sign in",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "You've been signed in successfully.",
+        });
+      }
+    } catch (err) {
+      console.error('Sign in catch error:', err);
       toast({
         title: "Sign in failed",
-        description: error.message,
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Welcome back!",
-        description: "You've been signed in successfully.",
-      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const fullName = formData.get('fullName') as string;
-    const role = formData.get('role') as string;
+    try {
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+      const fullName = formData.get('fullName') as string;
+      const role = formData.get('role') as string;
 
-    const { error } = await signUp(email, password, fullName, role);
-    
-    if (error) {
+      console.log('Sign up attempt:', { email, fullName, role });
+      
+      if (!email || !password || !fullName || !role) {
+        toast({
+          title: "Sign up failed",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error } = await signUp(email, password, fullName, role);
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        toast({
+          title: "Sign up failed",
+          description: error.message || "An error occurred during sign up",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to confirm your account.",
+        });
+      }
+    } catch (err) {
+      console.error('Sign up catch error:', err);
       toast({
         title: "Sign up failed",
-        description: error.message,
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Account created!",
-        description: "Please check your email to confirm your account.",
-      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   if (loading) {
