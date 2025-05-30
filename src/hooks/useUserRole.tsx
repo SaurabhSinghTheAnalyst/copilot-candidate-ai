@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
-type UserRole = 'candidate' | 'recruiter';
+type UserRole = Database['public']['Enums']['app_role'];
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -32,7 +32,7 @@ export const useUserRole = () => {
           setRole(null);
         } else if (data) {
           console.log('User role fetched:', data.role);
-          setRole(data.role as UserRole);
+          setRole(data.role);
         }
       } catch (error) {
         console.error('Error fetching user role:', error);
