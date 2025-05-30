@@ -60,13 +60,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('Attempting signup with role:', role);
     
     try {
+      // Ensure role is one of the valid enum values
+      const validRole = role === 'recruiter' ? 'recruiter' : 'candidate';
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            role: role,
+            role: validRole,
           },
         },
       });
