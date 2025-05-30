@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Upload, Briefcase, Users, MapPin, Mail, Phone, FileText, Zap, LogOut } from 'lucide-react';
+import { Search, Briefcase, Users, MapPin, Mail, Phone, FileText, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import CandidateUploadArea from '@/components/CandidateUploadArea';
 import JobSearchResults from '@/components/JobSearchResults';
 import CandidateDashboard from '@/components/CandidateDashboard';
 
@@ -87,14 +86,10 @@ const Candidate = () => {
 
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="search" className="flex items-center space-x-2">
               <Search className="w-4 h-4" />
               <span>Find Jobs</span>
-            </TabsTrigger>
-            <TabsTrigger value="upload" className="flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Upload Resume</span>
             </TabsTrigger>
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
@@ -224,10 +219,6 @@ const Candidate = () => {
 
             {/* Search Results */}
             {showResults && <JobSearchResults query={searchQuery} />}
-          </TabsContent>
-
-          <TabsContent value="upload">
-            <CandidateUploadArea />
           </TabsContent>
 
           <TabsContent value="dashboard">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Upload, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut } from 'lucide-react';
+import { Search, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import CandidateCard from '@/components/CandidateCard';
 import CandidateCarousel from '@/components/CandidateCarousel';
-import UploadArea from '@/components/UploadArea';
 import SearchResults from '@/components/SearchResults';
 import DashboardStats from '@/components/DashboardStats';
 
@@ -89,14 +88,10 @@ const Index = () => {
 
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="search" className="flex items-center space-x-2">
               <Search className="w-4 h-4" />
               <span>Search Candidates</span>
-            </TabsTrigger>
-            <TabsTrigger value="upload" className="flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Upload Resumes</span>
             </TabsTrigger>
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
@@ -174,10 +169,6 @@ const Index = () => {
 
             {/* Search Results */}
             {showResults && <SearchResults query={searchQuery} />}
-          </TabsContent>
-
-          <TabsContent value="upload">
-            <UploadArea />
           </TabsContent>
 
           <TabsContent value="dashboard">
