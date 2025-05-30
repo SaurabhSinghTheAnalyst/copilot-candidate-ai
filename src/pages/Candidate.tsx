@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Search, Upload, Briefcase, Users, MapPin, Mail, Phone, FileText, Zap, LogOut, ArrowLeft } from 'lucide-react';
+import { Search, Upload, Briefcase, Users, MapPin, Mail, Phone, FileText, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,10 +56,6 @@ const Candidate = () => {
     });
   };
 
-  const goToRecruiterView = () => {
-    navigate('/');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50">
       {/* Header */}
@@ -77,10 +72,6 @@ const Candidate = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={goToRecruiterView}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Recruiter Portal
-              </Button>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
                 Welcome, {user?.email}

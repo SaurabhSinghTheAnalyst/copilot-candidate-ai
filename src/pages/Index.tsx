@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Search, Upload, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut, ArrowRight } from 'lucide-react';
+import { Search, Upload, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,10 +58,6 @@ const Index = () => {
     });
   };
 
-  const goToCandidateView = () => {
-    navigate('/candidate');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
@@ -79,10 +74,6 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={goToCandidateView}>
-                Candidate Portal
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
                 Welcome, {user?.email}
