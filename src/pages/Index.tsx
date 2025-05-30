@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Search, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut } from 'lucide-react';
+import { Search, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import CandidateCard from '@/components/CandidateCard';
 import CandidateCarousel from '@/components/CandidateCarousel';
 import SearchResults from '@/components/SearchResults';
 import DashboardStats from '@/components/DashboardStats';
+import JobPostCreator from '@/components/JobPostCreator';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,10 +90,14 @@ const Index = () => {
 
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="search" className="flex items-center space-x-2">
               <Search className="w-4 h-4" />
               <span>Search Candidates</span>
+            </TabsTrigger>
+            <TabsTrigger value="post-job" className="flex items-center space-x-2">
+              <Briefcase className="w-4 h-4" />
+              <span>Post a Job</span>
             </TabsTrigger>
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
@@ -169,6 +175,10 @@ const Index = () => {
 
             {/* Search Results */}
             {showResults && <SearchResults query={searchQuery} />}
+          </TabsContent>
+
+          <TabsContent value="post-job">
+            <JobPostCreator />
           </TabsContent>
 
           <TabsContent value="dashboard">
