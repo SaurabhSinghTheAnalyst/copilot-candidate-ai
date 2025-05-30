@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,10 +58,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [navigate]);
 
   const signUp = async (email: string, password: string, fullName: string, role: string = 'candidate') => {
-    console.log('Attempting signup with role:', role);
+    console.log('Attempting signup with:', { email, fullName, role });
     
     try {
-      // Ensure role is one of the valid enum values
+      // Ensure role is valid
       const validRole = role === 'recruiter' ? 'recruiter' : 'candidate';
       
       const { data, error } = await supabase.auth.signUp({
@@ -90,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting signin');
+    console.log('Attempting signin for:', email);
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({

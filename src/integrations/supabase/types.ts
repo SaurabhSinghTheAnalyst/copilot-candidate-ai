@@ -9,45 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      candidate_info: {
-        Row: {
-          created_at: string | null
-          email: string
-          interested_in: string
-          location: string
-          name: string
-          phone: string
-          requires_visa: boolean | null
-          resume: string | null
-          user_id: string | null
-          visa_expiry: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          interested_in: string
-          location: string
-          name: string
-          phone: string
-          requires_visa?: boolean | null
-          resume?: string | null
-          user_id?: string | null
-          visa_expiry?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          interested_in?: string
-          location?: string
-          name?: string
-          phone?: string
-          requires_visa?: boolean | null
-          resume?: string | null
-          user_id?: string | null
-          visa_expiry?: string | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string | null
