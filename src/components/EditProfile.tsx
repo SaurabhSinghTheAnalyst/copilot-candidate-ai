@@ -20,9 +20,9 @@ interface ProfileData {
   city: string;
   state: string;
   zipCode: string;
-  dateOfBirth: string;
   summary: string;
-  experience: string;
+  jobTitles: string;
+  rolesResponsibilities: string;
   skills: string;
   education: string;
   certifications: string;
@@ -46,9 +46,9 @@ const EditProfile = () => {
     city: '',
     state: '',
     zipCode: '',
-    dateOfBirth: '',
     summary: '',
-    experience: '',
+    jobTitles: '',
+    rolesResponsibilities: '',
     skills: '',
     education: '',
     certifications: ''
@@ -70,9 +70,9 @@ const EditProfile = () => {
         city: profile.city || '',
         state: profile.state || '',
         zipCode: profile.zip_code || '',
-        dateOfBirth: profile.date_of_birth || '',
         summary: profile.professional_summary || '',
-        experience: profile.years_of_experience || '',
+        jobTitles: profile.job_titles?.join(', ') || '',
+        rolesResponsibilities: profile.roles_responsibilities?.join('\n') || '',
         skills: profile.skills?.join(', ') || '',
         education: profile.education || '',
         certifications: profile.certifications?.join(', ') || ''
@@ -106,12 +106,12 @@ const EditProfile = () => {
       city: personalInfo.city || profileData.city,
       state: personalInfo.state || profileData.state,
       summary: professionalInfo.summary || profileData.summary,
-      experience: professionalInfo.experience || profileData.experience,
+      jobTitles: professionalInfo.jobTitles?.join(', ') || profileData.jobTitles,
+      rolesResponsibilities: professionalInfo.rolesResponsibilities?.join('\n') || profileData.rolesResponsibilities,
       skills: professionalInfo.skills?.join(', ') || profileData.skills,
       education: professionalInfo.education || profileData.education,
       certifications: professionalInfo.certifications?.join(', ') || profileData.certifications,
-      zipCode: profileData.zipCode,
-      dateOfBirth: profileData.dateOfBirth
+      zipCode: profileData.zipCode
     };
 
     setProfileData(updatedProfileData);
@@ -127,9 +127,9 @@ const EditProfile = () => {
       city: personalInfo.city,
       state: personalInfo.state,
       zip_code: profileData.zipCode,
-      date_of_birth: profileData.dateOfBirth,
       professional_summary: professionalInfo.summary,
-      years_of_experience: professionalInfo.experience,
+      job_titles: professionalInfo.jobTitles || [],
+      roles_responsibilities: professionalInfo.rolesResponsibilities || [],
       skills: professionalInfo.skills || [],
       education: professionalInfo.education,
       certifications: professionalInfo.certifications || [],
@@ -137,7 +137,7 @@ const EditProfile = () => {
       skill_match_score: score.skillMatch,
       experience_match_score: score.experienceMatch,
       education_match_score: score.educationMatch,
-      resume_file_name: 'parsed_resume.pdf' // You might want to pass the actual filename
+      resume_file_name: 'parsed_resume.pdf'
     };
 
     await saveProfile(candidateData);
@@ -165,9 +165,9 @@ const EditProfile = () => {
       city: profileData.city,
       state: profileData.state,
       zip_code: profileData.zipCode,
-      date_of_birth: profileData.dateOfBirth,
       professional_summary: profileData.summary,
-      years_of_experience: profileData.experience,
+      job_titles: profileData.jobTitles ? profileData.jobTitles.split(',').map(s => s.trim()) : [],
+      roles_responsibilities: profileData.rolesResponsibilities ? profileData.rolesResponsibilities.split('\n').map(s => s.trim()).filter(s => s) : [],
       skills: profileData.skills ? profileData.skills.split(',').map(s => s.trim()) : [],
       education: profileData.education,
       certifications: profileData.certifications ? profileData.certifications.split(',').map(s => s.trim()) : [],
@@ -302,17 +302,6 @@ const EditProfile = () => {
                 </div>
               </div>
 
-              {/* Date of Birth */}
-              <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={profileData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                />
-              </div>
-
               {/* Professional Information */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -327,12 +316,23 @@ const EditProfile = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="experience">Years of Experience</Label>
+                  <Label htmlFor="jobTitles">Job Titles</Label>
                   <Input
-                    id="experience"
-                    placeholder="e.g., 5 years"
-                    value={profileData.experience}
-                    onChange={(e) => handleInputChange('experience', e.target.value)}
+                    id="jobTitles"
+                    placeholder="e.g., Software Developer, Frontend Engineer, Full Stack Developer"
+                    value={profileData.jobTitles}
+                    onChange={(e) => handleInputChange('jobTitles', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rolesResponsibilities">Roles & Responsibilities</Label>
+                  <Textarea
+                    id="rolesResponsibilities"
+                    placeholder="Enter each role/responsibility on a new line..."
+                    value={profileData.rolesResponsibilities}
+                    onChange={(e) => handleInputChange('rolesResponsibilities', e.target.value)}
+                    rows={4}
                   />
                 </div>
 

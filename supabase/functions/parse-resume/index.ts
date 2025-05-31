@@ -36,7 +36,8 @@ serve(async (req) => {
     - Generate a realistic email using the person's actual name (firstname.lastname@domain.com format)
     - Create a realistic phone number in proper format
     - Generate skills that match the job requirements provided
-    - Create experience levels and education that are realistic for the role
+    - Create job titles and roles/responsibilities that are realistic for the role
+    - Include work experience with specific job titles and responsibilities
     - Make all contact information and professional details realistic but not real/existing data
     - Ensure scores reflect realistic assessment based on generated profile
 
@@ -53,7 +54,8 @@ serve(async (req) => {
       },
       "professionalInfo": {
         "summary": "Professional summary matching the job requirements and generated experience",
-        "experience": "realistic years of experience",
+        "jobTitles": ["array of realistic job titles held"],
+        "rolesResponsibilities": ["array of specific roles and responsibilities from work experience"],
         "skills": ["skills array matching job requirements"],
         "education": "appropriate education background for the role",
         "certifications": ["relevant certifications for the position"]
@@ -69,6 +71,7 @@ serve(async (req) => {
     CRITICAL: 
     - Use the ACTUAL name from the filename
     - Generate email using the real name from filename
+    - Create realistic job titles and responsibilities for tech professionals
     - Make all other details realistic for a tech professional
     - Return ONLY the JSON object, no additional text or markdown formatting
     `;
@@ -84,7 +87,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert resume parser. Always return valid JSON only, no additional text or markdown formatting. Extract the exact name from the filename and generate realistic professional data that matches the job requirements.'
+            content: 'You are an expert resume parser. Always return valid JSON only, no additional text or markdown formatting. Extract the exact name from the filename and generate realistic professional data that matches the job requirements including job titles and roles/responsibilities.'
           },
           {
             role: 'user',
@@ -134,7 +137,13 @@ serve(async (req) => {
         },
         professionalInfo: {
           summary: `Experienced software developer with expertise in ${requirements || 'modern web technologies'}`,
-          experience: "5 years",
+          jobTitles: ["Software Developer", "Frontend Engineer", "Full Stack Developer"],
+          rolesResponsibilities: [
+            "Developed and maintained web applications using modern frameworks",
+            "Collaborated with cross-functional teams to deliver high-quality software",
+            "Implemented responsive user interfaces and optimized application performance",
+            "Participated in code reviews and mentored junior developers"
+          ],
           skills: requirements?.includes('React') ? ["React", "JavaScript", "Node.js", "TypeScript"] : ["JavaScript", "Python", "SQL", "Git"],
           education: "Bachelor's in Computer Science",
           certifications: ["AWS Certified Developer"]

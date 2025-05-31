@@ -14,9 +14,9 @@ interface CandidateProfile {
   city?: string;
   state?: string;
   zip_code?: string;
-  date_of_birth?: string;
   professional_summary?: string;
-  years_of_experience?: string;
+  job_titles?: string[];
+  roles_responsibilities?: string[];
   skills?: string[];
   education?: string;
   certifications?: string[];
@@ -79,9 +79,9 @@ export const useCandidateProfile = () => {
         city: profileData.city,
         state: profileData.state,
         zip_code: profileData.zip_code,
-        date_of_birth: profileData.date_of_birth,
         professional_summary: profileData.professional_summary,
-        years_of_experience: profileData.years_of_experience,
+        job_titles: profileData.job_titles,
+        roles_responsibilities: profileData.roles_responsibilities,
         skills: profileData.skills,
         education: profileData.education,
         certifications: profileData.certifications,
