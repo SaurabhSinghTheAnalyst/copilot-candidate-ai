@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone, Plus } from 'lucide-react';
+import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone, Plus, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +13,6 @@ const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { profile, loading } = useCandidateProfile();
 
-  // Mock user data for stats (will be replaced with real data later)
-  const candidateData = {
-    applications: 12,
-    interviews: 3,
-    profileViews: 45
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -31,6 +24,18 @@ const CandidateDashboard = () => {
   const displayName = profile 
     ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'
     : 'Your Name';
+
+  // Calculate real stats from profile data
+  const totalExperience = profile?.job_experience?.length || 0;
+  const totalEducation = profile?.education_history?.length || 0;
+  const totalCertifications = profile?.certification_history?.length || 0;
+
+  // Mock application data (these would come from job applications in a real app)
+  const mockStats = {
+    applications: 12,
+    interviews: 3,
+    profileViews: 45
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -92,6 +97,34 @@ const CandidateDashboard = () => {
                 </span>
               </div>
             </div>
+
+            {/* Professional Links */}
+            {(profile?.github_url || profile?.linkedin_url) && (
+              <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-gray-100">
+                {profile?.github_url && (
+                  <a 
+                    href={profile.github_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-emerald-600 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>GitHub</span>
+                  </a>
+                )}
+                {profile?.linkedin_url && (
+                  <a 
+                    href={profile.linkedin_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-emerald-600 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>LinkedIn</span>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Skills Section */}
@@ -122,15 +155,15 @@ const CandidateDashboard = () => {
           {/* Profile Completeness */}
           <ProfileCompletenessCard profile={profile} />
 
-          {/* Quick Stats */}
+          {/* Professional Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border-gray-100">
               <CardContent className="p-6 text-center">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                  <Briefcase className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.applications}</div>
-                <div className="text-sm text-gray-600">Applications</div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{totalExperience}</div>
+                <div className="text-sm text-gray-600">Work Experience</div>
               </CardContent>
             </Card>
 
@@ -139,17 +172,50 @@ const CandidateDashboard = () => {
                 <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-3">
                   <Calendar className="w-5 h-5 text-emerald-600" />
                 </div>
-                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.interviews}</div>
-                <div className="text-sm text-gray-600">Interviews</div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{totalEducation}</div>
+                <div className="text-sm text-gray-600">Education</div>
               </CardContent>
             </Card>
 
             <Card className="border-gray-100">
               <CardContent className="p-6 text-center">
                 <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <User className="w-5 h-5 text-purple-600" />
+                  <FileText className="w-5 h-5 text-purple-600" />
                 </div>
-                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.profileViews}</div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{totalCertifications}</div>
+                <div className="text-sm text-gray-600">Certifications</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Application Activity Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-gray-100">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{mockStats.applications}</div>
+                <div className="text-sm text-gray-600">Applications</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-100">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{mockStats.interviews}</div>
+                <div className="text-sm text-gray-600">Interviews</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-100">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <User className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{mockStats.profileViews}</div>
                 <div className="text-sm text-gray-600">Profile Views</div>
               </CardContent>
             </Card>
@@ -157,7 +223,7 @@ const CandidateDashboard = () => {
 
           {/* Experience Summary */}
           <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Experience Summary</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Experience</h3>
             <div className="space-y-3">
               {profile?.job_experience && profile.job_experience.length > 0 ? (
                 profile.job_experience.slice(0, 3).map((job, index) => (
@@ -165,9 +231,22 @@ const CandidateDashboard = () => {
                     <div>
                       <div className="font-medium text-gray-900">{job.jobTitle || 'Job Title'}</div>
                       <div className="text-sm text-gray-600">{job.company || 'Company'}</div>
+                      {job.responsibilities && (
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {job.responsibilities.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {job.startDate ? new Date(job.startDate).getFullYear() : 'Year'}
+                    <div className="text-sm text-gray-500 text-right">
+                      <div>
+                        {job.startDate ? new Date(job.startDate).getFullYear() : 'Year'} - 
+                        {job.isCurrentJob ? ' Present' : (job.endDate ? ` ${new Date(job.endDate).getFullYear()}` : ' Present')}
+                      </div>
+                      {job.isCurrentJob && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 mt-1">
+                          Current
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))
@@ -187,6 +266,30 @@ const CandidateDashboard = () => {
               )}
             </div>
           </div>
+
+          {/* Education Summary */}
+          {profile?.education_history && profile.education_history.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Education</h3>
+              <div className="space-y-3">
+                {profile.education_history.slice(0, 2).map((edu, index) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-b-0">
+                    <div>
+                      <div className="font-medium text-gray-900">{edu.degree || 'Degree'}</div>
+                      <div className="text-sm text-gray-600">{edu.institution || 'Institution'}</div>
+                      {edu.fieldOfStudy && (
+                        <div className="text-xs text-gray-500">{edu.fieldOfStudy}</div>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {edu.startDate ? new Date(edu.startDate).getFullYear() : 'Year'} - 
+                      {edu.isCurrentlyStudying ? ' Present' : (edu.endDate ? ` ${new Date(edu.endDate).getFullYear()}` : ' Present')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="edit">
