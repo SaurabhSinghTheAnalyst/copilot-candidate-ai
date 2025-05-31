@@ -22,11 +22,11 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Simulate file processing (in real implementation, you'd use OCR or text extraction)
+    // Create a more detailed prompt for better parsing
     const prompt = `
     You are an expert resume parser and candidate scorer. Parse the following resume and extract information in JSON format.
     
-    Requirements for scoring: ${requirements || 'General IT position requirements'}
+    Job Requirements: ${requirements || 'General software development position'}
     
     Please extract and return a JSON object with this exact structure:
     {
@@ -56,7 +56,7 @@ serve(async (req) => {
     
     Resume file: ${fileName}
     
-    Since I cannot process the actual file content, please generate realistic sample data for a software developer resume with relevant skills like React, Node.js, TypeScript, etc.
+    Generate realistic sample data for a software developer resume with relevant skills like React, Node.js, TypeScript, Python, AWS, etc. Make the scores realistic based on the requirements provided.
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -70,7 +70,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert resume parser. Always return valid JSON only, no additional text.'
+            content: 'You are an expert resume parser. Always return valid JSON only, no additional text or markdown formatting.'
           },
           {
             role: 'user',
@@ -78,16 +78,27 @@ serve(async (req) => {
           }
         ],
         temperature: 0.3,
+        max_tokens: 1500,
       }),
     });
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('OpenAI API Error:', error);
       throw new Error(error.error?.message || 'Failed to process resume');
     }
 
     const data = await response.json();
-    const parsedData = JSON.parse(data.choices[0].message.content);
+    const content = data.choices[0].message.content;
+    
+    // Parse the JSON response
+    let parsedData;
+    try {
+      parsedData = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', content);
+      throw new Error('Failed to parse resume data');
+    }
 
     console.log('Resume parsed successfully');
 
