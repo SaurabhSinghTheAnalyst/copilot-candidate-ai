@@ -30,6 +30,84 @@ export type Database = {
         }
         Relationships: []
       }
+      candidates: {
+        Row: {
+          address: string | null
+          certifications: string[] | null
+          city: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          education: string | null
+          education_match_score: number | null
+          email: string | null
+          experience_match_score: number | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          last_updated: string | null
+          overall_score: number | null
+          phone: string | null
+          professional_summary: string | null
+          resume_file_name: string | null
+          skill_match_score: number | null
+          skills: string[] | null
+          state: string | null
+          user_id: string
+          years_of_experience: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          education?: string | null
+          education_match_score?: number | null
+          email?: string | null
+          experience_match_score?: number | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_updated?: string | null
+          overall_score?: number | null
+          phone?: string | null
+          professional_summary?: string | null
+          resume_file_name?: string | null
+          skill_match_score?: number | null
+          skills?: string[] | null
+          state?: string | null
+          user_id: string
+          years_of_experience?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          education?: string | null
+          education_match_score?: number | null
+          email?: string | null
+          experience_match_score?: number | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_updated?: string | null
+          overall_score?: number | null
+          phone?: string | null
+          professional_summary?: string | null
+          resume_file_name?: string | null
+          skill_match_score?: number | null
+          skills?: string[] | null
+          state?: string | null
+          user_id?: string
+          years_of_experience?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       recruiter_profiles: {
         Row: {
           created_at: string | null

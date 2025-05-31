@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Save, MapPin, Mail, Phone, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import ResumeParser from './ResumeParser';
 import CandidateScoreCard from './CandidateScoreCard';
+import { useCandidateProfile } from '@/hooks/useCandidateProfile';
 
 interface ProfileData {
   firstName: string;
@@ -35,6 +36,7 @@ interface ScoreData {
 }
 
 const EditProfile = () => {
+  const { profile, loading, saveProfile } = useCandidateProfile();
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: '',
     lastName: '',
@@ -53,35 +55,95 @@ const EditProfile = () => {
   });
   
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  // Load existing profile data when component mounts or profile changes
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        zipCode: profile.zip_code || '',
+        dateOfBirth: profile.date_of_birth || '',
+        summary: profile.professional_summary || '',
+        experience: profile.years_of_experience || '',
+        skills: profile.skills?.join(', ') || '',
+        education: profile.education || '',
+        certifications: profile.certifications?.join(', ') || ''
+      });
+
+      // Set score data if available
+      if (profile.overall_score) {
+        setScoreData({
+          overall: profile.overall_score,
+          skillMatch: profile.skill_match_score || 0,
+          experienceMatch: profile.experience_match_score || 0,
+          educationMatch: profile.education_match_score || 0
+        });
+      }
+    }
+  }, [profile]);
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleResumeDataParsed = (parsedData: any) => {
+  const handleResumeDataParsed = async (parsedData: any) => {
     const { personalInfo, professionalInfo, score } = parsedData;
     
-    setProfileData(prev => ({
-      ...prev,
-      firstName: personalInfo.firstName || prev.firstName,
-      lastName: personalInfo.lastName || prev.lastName,
-      email: personalInfo.email || prev.email,
-      phone: personalInfo.phone || prev.phone,
-      address: personalInfo.address || prev.address,
-      city: personalInfo.city || prev.city,
-      state: personalInfo.state || prev.state,
-      summary: professionalInfo.summary || prev.summary,
-      experience: professionalInfo.experience || prev.experience,
-      skills: professionalInfo.skills?.join(', ') || prev.skills,
-      education: professionalInfo.education || prev.education,
-      certifications: professionalInfo.certifications?.join(', ') || prev.certifications
-    }));
+    const updatedProfileData = {
+      firstName: personalInfo.firstName || profileData.firstName,
+      lastName: personalInfo.lastName || profileData.lastName,
+      email: personalInfo.email || profileData.email,
+      phone: personalInfo.phone || profileData.phone,
+      address: personalInfo.address || profileData.address,
+      city: personalInfo.city || profileData.city,
+      state: personalInfo.state || profileData.state,
+      summary: professionalInfo.summary || profileData.summary,
+      experience: professionalInfo.experience || profileData.experience,
+      skills: professionalInfo.skills?.join(', ') || profileData.skills,
+      education: professionalInfo.education || profileData.education,
+      certifications: professionalInfo.certifications?.join(', ') || profileData.certifications,
+      zipCode: profileData.zipCode,
+      dateOfBirth: profileData.dateOfBirth
+    };
 
+    setProfileData(updatedProfileData);
     setScoreData(score);
+
+    // Automatically save the parsed data to Supabase
+    const candidateData = {
+      first_name: personalInfo.firstName,
+      last_name: personalInfo.lastName,
+      email: personalInfo.email,
+      phone: personalInfo.phone,
+      address: personalInfo.address,
+      city: personalInfo.city,
+      state: personalInfo.state,
+      zip_code: profileData.zipCode,
+      date_of_birth: profileData.dateOfBirth,
+      professional_summary: professionalInfo.summary,
+      years_of_experience: professionalInfo.experience,
+      skills: professionalInfo.skills || [],
+      education: professionalInfo.education,
+      certifications: professionalInfo.certifications || [],
+      overall_score: score.overall,
+      skill_match_score: score.skillMatch,
+      experience_match_score: score.experienceMatch,
+      education_match_score: score.educationMatch,
+      resume_file_name: 'parsed_resume.pdf' // You might want to pass the actual filename
+    };
+
+    await saveProfile(candidateData);
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     // Basic validation
     if (!profileData.firstName || !profileData.lastName || !profileData.email) {
       toast({
@@ -92,12 +154,40 @@ const EditProfile = () => {
       return;
     }
 
-    // Simulate saving profile
-    toast({
-      title: "Profile saved successfully!",
-      description: "Your profile information has been updated",
-    });
+    setIsSaving(true);
+
+    const candidateData = {
+      first_name: profileData.firstName,
+      last_name: profileData.lastName,
+      email: profileData.email,
+      phone: profileData.phone,
+      address: profileData.address,
+      city: profileData.city,
+      state: profileData.state,
+      zip_code: profileData.zipCode,
+      date_of_birth: profileData.dateOfBirth,
+      professional_summary: profileData.summary,
+      years_of_experience: profileData.experience,
+      skills: profileData.skills ? profileData.skills.split(',').map(s => s.trim()) : [],
+      education: profileData.education,
+      certifications: profileData.certifications ? profileData.certifications.split(',').map(s => s.trim()) : [],
+      overall_score: scoreData?.overall,
+      skill_match_score: scoreData?.skillMatch,
+      experience_match_score: scoreData?.experienceMatch,
+      education_match_score: scoreData?.educationMatch
+    };
+
+    await saveProfile(candidateData);
+    setIsSaving(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <div className="text-lg">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -281,10 +371,11 @@ const EditProfile = () => {
               <div className="pt-4">
                 <Button 
                   onClick={handleSaveProfile}
+                  disabled={isSaving}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save Profile
+                  {isSaving ? 'Saving...' : 'Save Profile'}
                 </Button>
               </div>
             </CardContent>
