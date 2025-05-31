@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Plus, X, CheckCircle } from 'lucide-react';
+import { Plus, X, CheckCircle, Wand2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 
 interface JobData {
   title: string;
@@ -35,10 +37,11 @@ const JobPostCreator = () => {
     description: '',
     requirements: ''
   });
-  const [isVoiceInput, setIsVoiceInput] = useState(false);
-  const [voiceInput, setVoiceInput] = useState('');
+  const [textPrompt, setTextPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedLinkedinPost, setGeneratedLinkedinPost] = useState('');
   const { toast } = useToast();
   const [publishingOptions, setPublishingOptions] = useState<PublishingOptions>({
     hiringCopilot: true,
@@ -52,22 +55,78 @@ const JobPostCreator = () => {
     setJobData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleVoiceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setVoiceInput(e.target.value);
-  };
+  const generateJobDescription = async () => {
+    if (!textPrompt.trim()) {
+      toast({
+        title: "Enter a description",
+        description: "Please describe the job you want to create",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const handleAddVoiceInput = () => {
-    if (voiceInput.trim()) {
-      setJobData(prev => ({ ...prev, description: prev.description + ' ' + voiceInput }));
-      setVoiceInput('');
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-job-description', {
+        body: { prompt: textPrompt }
+      });
+
+      if (error) throw error;
+
+      if (data?.jobData) {
+        setJobData(data.jobData);
+        toast({
+          title: "Job description generated!",
+          description: "Your job posting has been created from your description",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating job description:', error);
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate job description. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handleRemoveVoiceInput = () => {
-    setVoiceInput('');
+  const generateLinkedInPost = async () => {
+    if (!jobData.title || !jobData.company) {
+      toast({
+        title: "Missing job details",
+        description: "Please fill in the job title and company first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-linkedin-post', {
+        body: { jobData }
+      });
+
+      if (error) throw error;
+
+      if (data?.linkedinPost) {
+        setGeneratedLinkedinPost(data.linkedinPost);
+        toast({
+          title: "LinkedIn post generated!",
+          description: "Your LinkedIn post content is ready",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating LinkedIn post:', error);
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate LinkedIn post. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.description || !jobData.requirements) {
       toast({
         title: "Required fields missing",
@@ -78,15 +137,34 @@ const JobPostCreator = () => {
     }
 
     setIsPublishing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsPublishing(false);
+    
+    try {
+      // Call the job posting function
+      const { data, error } = await supabase.functions.invoke('publish-job-post', {
+        body: { 
+          jobData, 
+          publishingOptions,
+          linkedinPost: publishingOptions.createLinkedinPost ? generatedLinkedinPost : null
+        }
+      });
+
+      if (error) throw error;
+
       setShowSuccessModal(true);
       toast({
         title: "Job published successfully!",
         description: `Your job posting for ${jobData.title} at ${jobData.company} has been published`,
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Error publishing job:', error);
+      toast({
+        title: "Publishing failed",
+        description: "Failed to publish job. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -94,113 +172,125 @@ const JobPostCreator = () => {
       <div className="text-center space-y-4">
         <h2 className="text-3xl font-bold text-gray-900">Create a Job Post</h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Attract top talent by creating a compelling job posting with detailed requirements and company information
+          Describe your ideal job opening and let AI create a compelling job posting for you
         </p>
       </div>
 
-      {/* Voice Input Section */}
+      {/* AI Job Description Generator */}
       <Card className="max-w-4xl mx-auto">
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Voice Input</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setIsVoiceInput(!isVoiceInput)}>
-            {isVoiceInput ? 'Disable Voice Input' : 'Enable Voice Input'}
-          </Button>
+          <CardTitle className="flex items-center space-x-2">
+            <Wand2 className="w-5 h-5" />
+            <span>AI Job Description Generator</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {isVoiceInput ? (
-            <div className="flex items-center space-x-4">
-              <Input
-                type="text"
-                placeholder="Describe the job details..."
-                value={voiceInput}
-                onChange={handleVoiceInputChange}
-              />
-              <Button onClick={handleAddVoiceInput}><Plus className="w-4 h-4 mr-2" /> Add</Button>
-              <Button variant="destructive" onClick={handleRemoveVoiceInput}><X className="w-4 h-4 mr-2" /> Clear</Button>
-            </div>
-          ) : (
-            <p className="text-gray-500">Voice input is disabled. Enable to add job details using voice.</p>
-          )}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="prompt">Describe the job you want to create</Label>
+            <Textarea
+              id="prompt"
+              placeholder="e.g., We need a senior React developer for our fintech startup in London. The role involves building user-facing applications, working with APIs, and mentoring junior developers. Remote work is possible."
+              value={textPrompt}
+              onChange={(e) => setTextPrompt(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <Button
+            onClick={generateJobDescription}
+            disabled={isGenerating}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
+            {isGenerating ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Generating...</span>
+              </div>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Job Description
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
       {/* Job Details Form */}
-      {jobData.title && (
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle>Job Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Job Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Software Engineer"
-                  value={jobData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name</Label>
-                <Input
-                  id="company"
-                  placeholder="e.g., TechCorp Inc."
-                  value={jobData.company}
-                  onChange={(e) => handleInputChange('company', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  placeholder="e.g., San Francisco, CA"
-                  value={jobData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">Job Type</Label>
-                <Select onValueChange={(value) => handleInputChange('type', value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select job type" defaultValue={jobData.type} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Full-time">Full-time</SelectItem>
-                    <SelectItem value="Part-time">Part-time</SelectItem>
-                    <SelectItem value="Contract">Contract</SelectItem>
-                    <SelectItem value="Temporary">Temporary</SelectItem>
-                    <SelectItem value="Internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Job Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Job Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe the job role and responsibilities..."
-                value={jobData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={4}
+              <Label htmlFor="title">Job Title</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Software Engineer"
+                value={jobData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="requirements">Job Requirements</Label>
-              <Textarea
-                id="requirements"
-                placeholder="List the required skills, experience, and qualifications..."
-                value={jobData.requirements}
-                onChange={(e) => handleInputChange('requirements', e.target.value)}
-                rows={4}
+              <Label htmlFor="company">Company Name</Label>
+              <Input
+                id="company"
+                placeholder="e.g., TechCorp Inc."
+                value={jobData.company}
+                onChange={(e) => handleInputChange('company', e.target.value)}
               />
             </div>
-          
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="e.g., San Francisco, CA"
+                value={jobData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Job Type</Label>
+              <Select onValueChange={(value) => handleInputChange('type', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select job type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Full-time">Full-time</SelectItem>
+                  <SelectItem value="Part-time">Part-time</SelectItem>
+                  <SelectItem value="Contract">Contract</SelectItem>
+                  <SelectItem value="Temporary">Temporary</SelectItem>
+                  <SelectItem value="Internship">Internship</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Job Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Describe the job role and responsibilities..."
+              value={jobData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requirements">Job Requirements</Label>
+            <Textarea
+              id="requirements"
+              placeholder="List the required skills, experience, and qualifications..."
+              value={jobData.requirements}
+              onChange={(e) => handleInputChange('requirements', e.target.value)}
+              rows={4}
+            />
+          </div>
+        
           {/* Publishing Options */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Publishing Options</h3>
@@ -263,7 +353,7 @@ const JobPostCreator = () => {
               </div>
             </div>
             
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="createLinkedinPost"
@@ -277,22 +367,47 @@ const JobPostCreator = () => {
                 />
                 <Label htmlFor="createLinkedinPost">Create LinkedIn post to share job opening</Label>
               </div>
-              <p className="text-sm text-gray-500 mt-1 ml-6">
+              
+              {publishingOptions.createLinkedinPost && (
+                <div className="ml-6 space-y-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={generateLinkedInPost}
+                    className="flex items-center space-x-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Generate LinkedIn Post</span>
+                  </Button>
+                  
+                  {generatedLinkedinPost && (
+                    <div className="space-y-2">
+                      <Label>Generated LinkedIn Post</Label>
+                      <Textarea
+                        value={generatedLinkedinPost}
+                        onChange={(e) => setGeneratedLinkedinPost(e.target.value)}
+                        rows={4}
+                        className="bg-blue-50"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-500 ml-6">
                 Generate a social media post to announce this job opening on your LinkedIn profile
               </p>
             </div>
           </div>
 
-            <Button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-            >
-              {isPublishing ? 'Publishing...' : 'Publish Job'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          <Button
+            onClick={handlePublish}
+            disabled={isPublishing}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            {isPublishing ? 'Publishing...' : 'Publish Job'}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Success Modal */}
       {showSuccessModal && (
@@ -301,8 +416,8 @@ const JobPostCreator = () => {
             <div className="flex flex-col items-center space-y-4">
               <CheckCircle className="w-12 h-12 text-green-500" />
               <h3 className="text-2xl font-semibold text-gray-900">Job Published!</h3>
-              <p className="text-gray-600">
-                Your job posting for <strong>{jobData.title}</strong> at <strong>{jobData.company}</strong> has been successfully published.
+              <p className="text-gray-600 text-center">
+                Your job posting for <strong>{jobData.title}</strong> at <strong>{jobData.company}</strong> has been successfully published across your selected platforms.
               </p>
               <Button onClick={() => setShowSuccessModal(false)}>Close</Button>
             </div>
