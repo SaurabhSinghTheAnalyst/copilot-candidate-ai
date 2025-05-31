@@ -39,9 +39,7 @@ export type Database = {
           created_at: string | null
           education: string | null
           education_history: Json | null
-          education_match_score: number | null
           email: string | null
-          experience_match_score: number | null
           first_name: string | null
           github_url: string | null
           id: string
@@ -49,11 +47,9 @@ export type Database = {
           last_name: string | null
           last_updated: string | null
           linkedin_url: string | null
-          overall_score: number | null
           phone: string | null
           professional_summary: string | null
           resume_file_name: string | null
-          skill_match_score: number | null
           skills: string[] | null
           state: string | null
           user_id: string
@@ -68,9 +64,7 @@ export type Database = {
           created_at?: string | null
           education?: string | null
           education_history?: Json | null
-          education_match_score?: number | null
           email?: string | null
-          experience_match_score?: number | null
           first_name?: string | null
           github_url?: string | null
           id?: string
@@ -78,11 +72,9 @@ export type Database = {
           last_name?: string | null
           last_updated?: string | null
           linkedin_url?: string | null
-          overall_score?: number | null
           phone?: string | null
           professional_summary?: string | null
           resume_file_name?: string | null
-          skill_match_score?: number | null
           skills?: string[] | null
           state?: string | null
           user_id: string
@@ -97,9 +89,7 @@ export type Database = {
           created_at?: string | null
           education?: string | null
           education_history?: Json | null
-          education_match_score?: number | null
           email?: string | null
-          experience_match_score?: number | null
           first_name?: string | null
           github_url?: string | null
           id?: string
@@ -107,11 +97,9 @@ export type Database = {
           last_name?: string | null
           last_updated?: string | null
           linkedin_url?: string | null
-          overall_score?: number | null
           phone?: string | null
           professional_summary?: string | null
           resume_file_name?: string | null
-          skill_match_score?: number | null
           skills?: string[] | null
           state?: string | null
           user_id?: string

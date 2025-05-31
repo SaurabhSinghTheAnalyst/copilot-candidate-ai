@@ -18,10 +18,6 @@ interface CandidateProfile {
   skills?: string[];
   education?: string;
   certifications?: string[];
-  overall_score?: number;
-  skill_match_score?: number;
-  experience_match_score?: number;
-  education_match_score?: number;
   resume_file_name?: string;
   job_experience?: any[];
   education_history?: any[];
@@ -94,10 +90,6 @@ export const useCandidateProfile = () => {
         skills: profileData.skills,
         education: profileData.education,
         certifications: profileData.certifications,
-        overall_score: profileData.overall_score,
-        skill_match_score: profileData.skill_match_score,
-        experience_match_score: profileData.experience_match_score,
-        education_match_score: profileData.education_match_score,
         resume_file_name: profileData.resume_file_name,
         job_experience: profileData.job_experience || [],
         education_history: profileData.education_history || [],

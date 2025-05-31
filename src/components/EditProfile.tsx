@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import ResumeParser from './ResumeParser';
-import CandidateScoreCard from './CandidateScoreCard';
 import JobExperienceSection from './profile/JobExperienceSection';
 import EducationSection from './profile/EducationSection';
 import CertificationSection from './profile/CertificationSection';
@@ -27,13 +26,6 @@ interface ProfileData {
   skills: string;
   githubPortfolio: string;
   linkedinId: string;
-}
-
-interface ScoreData {
-  overall: number;
-  skillMatch: number;
-  experienceMatch: number;
-  educationMatch: number;
 }
 
 const EditProfile = () => {
@@ -56,7 +48,6 @@ const EditProfile = () => {
   const [jobExperience, setJobExperience] = useState<any[]>([]);
   const [education, setEducation] = useState<any[]>([]);
   const [certifications, setCertifications] = useState<any[]>([]);
-  const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -82,16 +73,6 @@ const EditProfile = () => {
       setJobExperience(profile.job_experience || []);
       setEducation(profile.education_history || []);
       setCertifications(profile.certification_history || []);
-
-      // Set score data if available
-      if (profile.overall_score) {
-        setScoreData({
-          overall: profile.overall_score,
-          skillMatch: profile.skill_match_score || 0,
-          experienceMatch: profile.experience_match_score || 0,
-          educationMatch: profile.education_match_score || 0
-        });
-      }
     }
   }, [profile]);
 
@@ -100,7 +81,7 @@ const EditProfile = () => {
   };
 
   const handleResumeDataParsed = async (parsedData: any) => {
-    const { personalInfo, professionalInfo, score } = parsedData;
+    const { personalInfo, professionalInfo } = parsedData;
     
     const updatedProfileData = {
       firstName: personalInfo.firstName || profileData.firstName,
@@ -118,7 +99,6 @@ const EditProfile = () => {
     };
 
     setProfileData(updatedProfileData);
-    setScoreData(score);
 
     // Convert employment details to job experience format
     if (professionalInfo.employmentDetails && Array.isArray(professionalInfo.employmentDetails)) {
@@ -149,10 +129,6 @@ const EditProfile = () => {
       job_experience: jobExperience,
       education_history: education,
       certification_history: certifications,
-      overall_score: score.overall,
-      skill_match_score: score.skillMatch,
-      experience_match_score: score.experienceMatch,
-      education_match_score: score.educationMatch,
       resume_file_name: 'parsed_resume.pdf',
       github_url: personalInfo.githubPortfolio,
       linkedin_url: personalInfo.linkedinId
@@ -188,10 +164,6 @@ const EditProfile = () => {
       job_experience: jobExperience,
       education_history: education,
       certification_history: certifications,
-      overall_score: scoreData?.overall,
-      skill_match_score: scoreData?.skillMatch,
-      experience_match_score: scoreData?.experienceMatch,
-      education_match_score: scoreData?.educationMatch,
       github_url: profileData.githubPortfolio,
       linkedin_url: profileData.linkedinId
     };
@@ -223,201 +195,191 @@ const EditProfile = () => {
         requirements="Software development position with React, Node.js, and cloud technologies"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Form */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Personal Information */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2">
-                <User className="w-5 h-5" />
-                <span>Personal Information</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Name Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Personal Information */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2">
+              <User className="w-5 h-5" />
+              <span>Personal Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  placeholder="Enter your first name"
+                  value={profileData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Enter your last name"
+                  value={profileData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={profileData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  placeholder="Enter your phone number"
+                  value={profileData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Professional Links */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="githubPortfolio">GitHub Portfolio</Label>
+                <Input
+                  id="githubPortfolio"
+                  placeholder="https://github.com/username"
+                  value={profileData.githubPortfolio}
+                  onChange={(e) => handleInputChange('githubPortfolio', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="linkedinId">LinkedIn Profile</Label>
+                <Input
+                  id="linkedinId"
+                  placeholder="https://linkedin.com/in/username"
+                  value={profileData.linkedinId}
+                  onChange={(e) => handleInputChange('linkedinId', e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Address Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address">Street Address</Label>
+                <Input
+                  id="address"
+                  placeholder="Enter your street address"
+                  value={profileData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
+                  <Label htmlFor="city">City</Label>
                   <Input
-                    id="firstName"
-                    placeholder="Enter your first name"
-                    value={profileData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    id="city"
+                    placeholder="City"
+                    value={profileData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Label htmlFor="state">State</Label>
                   <Input
-                    id="lastName"
-                    placeholder="Enter your last name"
-                    value={profileData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    id="state"
+                    placeholder="State"
+                    value={profileData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    placeholder="ZIP"
+                    value={profileData.zipCode}
+                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email address"
-                    value={profileData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="Enter your phone number"
-                    value={profileData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                  />
-                </div>
+            {/* Professional Summary and Skills */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="summary">Professional Summary</Label>
+                <Textarea
+                  id="summary"
+                  placeholder="Brief description of your professional background and career goals..."
+                  value={profileData.summary}
+                  onChange={(e) => handleInputChange('summary', e.target.value)}
+                  rows={4}
+                />
               </div>
 
-              {/* Professional Links */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="githubPortfolio">GitHub Portfolio</Label>
-                  <Input
-                    id="githubPortfolio"
-                    placeholder="https://github.com/username"
-                    value={profileData.githubPortfolio}
-                    onChange={(e) => handleInputChange('githubPortfolio', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="linkedinId">LinkedIn Profile</Label>
-                  <Input
-                    id="linkedinId"
-                    placeholder="https://linkedin.com/in/username"
-                    value={profileData.linkedinId}
-                    onChange={(e) => handleInputChange('linkedinId', e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="skills">Key Skills</Label>
+                <Input
+                  id="skills"
+                  placeholder="e.g., React, Node.js, Python, Project Management"
+                  value={profileData.skills}
+                  onChange={(e) => handleInputChange('skills', e.target.value)}
+                />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Address Fields */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="Enter your street address"
-                    value={profileData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      placeholder="City"
-                      value={profileData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      placeholder="State"
-                      value={profileData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">ZIP Code</Label>
-                    <Input
-                      id="zipCode"
-                      placeholder="ZIP"
-                      value={profileData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
+        {/* Work Experience */}
+        <Card>
+          <CardContent className="pt-6">
+            <JobExperienceSection 
+              jobExperience={jobExperience}
+              onChange={setJobExperience}
+            />
+          </CardContent>
+        </Card>
 
-              {/* Professional Summary and Skills */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="summary">Professional Summary</Label>
-                  <Textarea
-                    id="summary"
-                    placeholder="Brief description of your professional background and career goals..."
-                    value={profileData.summary}
-                    onChange={(e) => handleInputChange('summary', e.target.value)}
-                    rows={4}
-                  />
-                </div>
+        {/* Education */}
+        <Card>
+          <CardContent className="pt-6">
+            <EducationSection 
+              education={education}
+              onChange={setEducation}
+            />
+          </CardContent>
+        </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="skills">Key Skills</Label>
-                  <Input
-                    id="skills"
-                    placeholder="e.g., React, Node.js, Python, Project Management"
-                    value={profileData.skills}
-                    onChange={(e) => handleInputChange('skills', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Certifications */}
+        <Card>
+          <CardContent className="pt-6">
+            <CertificationSection 
+              certifications={certifications}
+              onChange={setCertifications}
+            />
+          </CardContent>
+        </Card>
 
-          {/* Work Experience */}
-          <Card>
-            <CardContent className="pt-6">
-              <JobExperienceSection 
-                jobExperience={jobExperience}
-                onChange={setJobExperience}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Education */}
-          <Card>
-            <CardContent className="pt-6">
-              <EducationSection 
-                education={education}
-                onChange={setEducation}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Certifications */}
-          <Card>
-            <CardContent className="pt-6">
-              <CertificationSection 
-                certifications={certifications}
-                onChange={setCertifications}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Save Button */}
-          <div className="pt-4">
-            <Button 
-              onClick={handleSaveProfile}
-              disabled={isSaving}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Profile'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Score Card */}
-        <div className="lg:col-span-1">
-          {scoreData && (
-            <CandidateScoreCard score={scoreData} />
-          )}
+        {/* Save Button */}
+        <div className="pt-4">
+          <Button 
+            onClick={handleSaveProfile}
+            disabled={isSaving}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Profile'}
+          </Button>
         </div>
       </div>
     </div>
