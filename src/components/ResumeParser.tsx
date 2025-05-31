@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -107,7 +107,27 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
       });
     } finally {
       setIsUploading(false);
+      // Reset the file input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
+  };
+
+  const handleDeleteFile = () => {
+    setUploadedFile(null);
+    setUploadProgress(0);
+    toast({
+      title: "File removed",
+      description: "You can now upload a new resume",
+    });
+  };
+
+  const resetAndUpload = () => {
+    setUploadedFile(null);
+    setUploadProgress(0);
+    // Trigger file input click
+    document.getElementById('resume-upload')?.click();
   };
 
   return (
@@ -129,9 +149,32 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
           </p>
           
           {uploadedFile ? (
-            <div className="flex items-center justify-center space-x-2 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">{uploadedFile}</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                <CheckCircle className="w-5 h-5" />
+                <span className="font-medium">{uploadedFile}</span>
+              </div>
+              
+              <div className="flex justify-center space-x-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDeleteFile}
+                  className="flex items-center space-x-2"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Remove</span>
+                </Button>
+                
+                <Button 
+                  size="sm"
+                  onClick={resetAndUpload}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center space-x-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Upload New</span>
+                </Button>
+              </div>
             </div>
           ) : (
             <div>
