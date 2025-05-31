@@ -6,23 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EditProfile from './EditProfile';
+import ProfileCompletenessCard from './ProfileCompletenessCard';
+import { useCandidateProfile } from '@/hooks/useCandidateProfile';
 
 const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { profile, loading } = useCandidateProfile();
 
-  // Mock user data
+  // Mock user data for stats (will be replaced with real data later)
   const candidateData = {
-    name: "Alex Johnson",
-    email: "alex.johnson@email.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    summary: "Experienced software developer with 5+ years in web development",
-    experience: "5 years",
-    skills: ["React", "TypeScript", "Node.js", "Python", "AWS"],
     applications: 12,
     interviews: 3,
     profileViews: 45
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <div className="text-lg">Loading profile...</div>
+      </div>
+    );
+  }
+
+  const displayName = profile 
+    ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'
+    : 'Your Name';
 
   return (
     <div className="space-y-8">
@@ -46,6 +54,11 @@ const CandidateDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Profile Completeness Card */}
+          <div className="max-w-4xl mx-auto">
+            <ProfileCompletenessCard profile={profile} />
+          </div>
+
           {/* Profile Summary Card */}
           <Card className="max-w-4xl mx-auto">
             <CardHeader className="pb-4">
@@ -71,37 +84,51 @@ const CandidateDashboard = () => {
                 </div>
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{candidateData.name}</h3>
-                    <p className="text-gray-600">{candidateData.summary}</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{displayName}</h3>
+                    <p className="text-gray-600">{profile?.professional_summary || 'Add a professional summary to showcase your expertise'}</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Mail className="w-4 h-4" />
-                      <span>{candidateData.email}</span>
+                      <span>{profile?.email || 'Add email address'}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Phone className="w-4 h-4" />
-                      <span>{candidateData.phone}</span>
+                      <span>{profile?.phone || 'Add phone number'}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
                       <MapPin className="w-4 h-4" />
-                      <span>{candidateData.location}</span>
+                      <span>
+                        {profile?.city && profile?.state 
+                          ? `${profile.city}, ${profile.state}`
+                          : 'Add location'
+                        }
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Briefcase className="w-4 h-4" />
-                      <span>{candidateData.experience} experience</span>
+                      <span>
+                        {profile?.job_experience && profile.job_experience.length > 0
+                          ? `${profile.job_experience.length} job${profile.job_experience.length > 1 ? 's' : ''} listed`
+                          : 'Add work experience'
+                        }
+                      </span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-semibold text-gray-900">Skills</h4>
                     <div className="flex flex-wrap gap-2">
-                      {candidateData.skills.map((skill) => (
-                        <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
-                          {skill}
-                        </Badge>
-                      ))}
+                      {profile?.skills && profile.skills.length > 0 ? (
+                        profile.skills.map((skill) => (
+                          <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
+                            {skill}
+                          </Badge>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">Add your skills to attract relevant opportunities</p>
+                      )}
                     </div>
                   </div>
                 </div>
