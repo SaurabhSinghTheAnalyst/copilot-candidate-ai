@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone } from 'lucide-react';
+import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,19 +33,12 @@ const CandidateDashboard = () => {
     : 'Your Name';
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">My Profile</h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Manage your profile, track applications, and update your information
-        </p>
-      </div>
-
+    <div className="max-w-5xl mx-auto space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
-            <span>Profile Overview</span>
+            <span>Overview</span>
           </TabsTrigger>
           <TabsTrigger value="edit" className="flex items-center space-x-2">
             <Edit className="w-4 h-4" />
@@ -54,142 +47,146 @@ const CandidateDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Profile Completeness Card */}
-          <div className="max-w-4xl mx-auto">
-            <ProfileCompletenessCard profile={profile} />
+          {/* Header Section */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center">
+                  <User className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900">{displayName}</h1>
+                  <p className="text-gray-600 mt-1">
+                    {profile?.professional_summary || 'Add a professional summary to showcase your expertise'}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setActiveTab('edit')}
+                className="shrink-0"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-3 text-sm text-gray-600">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <span>{profile?.email || 'Add email'}</span>
+              </div>
+              <div className="flex items-center space-x-3 text-sm text-gray-600">
+                <Phone className="w-4 h-4 text-gray-400" />
+                <span>{profile?.phone || 'Add phone'}</span>
+              </div>
+              <div className="flex items-center space-x-3 text-sm text-gray-600">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <span>
+                  {profile?.city && profile?.state 
+                    ? `${profile.city}, ${profile.state}`
+                    : 'Add location'
+                  }
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Profile Summary Card */}
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Profile Summary</span>
-                </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setActiveTab('edit')}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-start space-x-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center">
-                  <User className="w-12 h-12 text-white" />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{displayName}</h3>
-                    <p className="text-gray-600">{profile?.professional_summary || 'Add a professional summary to showcase your expertise'}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
-                      <span>{profile?.email || 'Add email address'}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span>{profile?.phone || 'Add phone number'}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>
-                        {profile?.city && profile?.state 
-                          ? `${profile.city}, ${profile.state}`
-                          : 'Add location'
-                        }
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Briefcase className="w-4 h-4" />
-                      <span>
-                        {profile?.job_experience && profile.job_experience.length > 0
-                          ? `${profile.job_experience.length} job${profile.job_experience.length > 1 ? 's' : ''} listed`
-                          : 'Add work experience'
-                        }
-                      </span>
-                    </div>
-                  </div>
+          {/* Skills Section */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Skills</h3>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setActiveTab('edit')}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {profile?.skills && profile.skills.length > 0 ? (
+                profile.skills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                    {skill}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">Add your skills to attract relevant opportunities</p>
+              )}
+            </div>
+          </div>
 
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-900">Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {profile?.skills && profile.skills.length > 0 ? (
-                        profile.skills.map((skill) => (
-                          <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
-                            {skill}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 text-sm">Add your skills to attract relevant opportunities</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Profile Completeness */}
+          <ProfileCompletenessCard profile={profile} />
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-gray-100">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-5 h-5 text-blue-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{candidateData.applications}</h3>
-                <p className="text-gray-600">Applications Sent</p>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.applications}</div>
+                <div className="text-sm text-gray-600">Applications</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-gray-100">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="w-6 h-6 text-green-600" />
+                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-5 h-5 text-emerald-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{candidateData.interviews}</h3>
-                <p className="text-gray-600">Interviews Scheduled</p>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.interviews}</div>
+                <div className="text-sm text-gray-600">Interviews</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-gray-100">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-6 h-6 text-purple-600" />
+                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <User className="w-5 h-5 text-purple-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{candidateData.profileViews}</h3>
-                <p className="text-gray-600">Profile Views</p>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{candidateData.profileViews}</div>
+                <div className="text-sm text-gray-600">Profile Views</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Activity */}
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { action: "Applied to Senior React Developer at TechCorp", time: "2 hours ago" },
-                  { action: "Profile viewed by Innovation Labs recruiter", time: "1 day ago" },
-                  { action: "Interview scheduled with Design Studio", time: "2 days ago" },
-                  { action: "Updated profile summary", time: "3 days ago" }
-                ].map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                    <span className="text-gray-900">{activity.action}</span>
-                    <span className="text-sm text-gray-500">{activity.time}</span>
+          {/* Experience Summary */}
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Experience Summary</h3>
+            <div className="space-y-3">
+              {profile?.job_experience && profile.job_experience.length > 0 ? (
+                profile.job_experience.slice(0, 3).map((job, index) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-b-0">
+                    <div>
+                      <div className="font-medium text-gray-900">{job.jobTitle || 'Job Title'}</div>
+                      <div className="text-sm text-gray-600">{job.company || 'Company'}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {job.startDate ? new Date(job.startDate).getFullYear() : 'Year'}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Briefcase className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No work experience added yet</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => setActiveTab('edit')}
+                  >
+                    Add Experience
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="edit">
