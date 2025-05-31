@@ -33,16 +33,19 @@ export type Database = {
       candidates: {
         Row: {
           address: string | null
+          certification_history: Json | null
           certifications: string[] | null
           city: string | null
           created_at: string | null
           date_of_birth: string | null
           education: string | null
+          education_history: Json | null
           education_match_score: number | null
           email: string | null
           experience_match_score: number | null
           first_name: string | null
           id: string
+          job_experience: Json | null
           last_name: string | null
           last_updated: string | null
           overall_score: number | null
@@ -58,16 +61,19 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          certification_history?: Json | null
           certifications?: string[] | null
           city?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           education?: string | null
+          education_history?: Json | null
           education_match_score?: number | null
           email?: string | null
           experience_match_score?: number | null
           first_name?: string | null
           id?: string
+          job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
           overall_score?: number | null
@@ -83,16 +89,19 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          certification_history?: Json | null
           certifications?: string[] | null
           city?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           education?: string | null
+          education_history?: Json | null
           education_match_score?: number | null
           email?: string | null
           experience_match_score?: number | null
           first_name?: string | null
           id?: string
+          job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
           overall_score?: number | null

@@ -15,8 +15,6 @@ interface CandidateProfile {
   state?: string;
   zip_code?: string;
   professional_summary?: string;
-  job_titles?: string[];
-  roles_responsibilities?: string[];
   skills?: string[];
   education?: string;
   certifications?: string[];
@@ -25,6 +23,9 @@ interface CandidateProfile {
   experience_match_score?: number;
   education_match_score?: number;
   resume_file_name?: string;
+  job_experience?: any[];
+  education_history?: any[];
+  certification_history?: any[];
 }
 
 export const useCandidateProfile = () => {
@@ -80,8 +81,6 @@ export const useCandidateProfile = () => {
         state: profileData.state,
         zip_code: profileData.zip_code,
         professional_summary: profileData.professional_summary,
-        job_titles: profileData.job_titles,
-        roles_responsibilities: profileData.roles_responsibilities,
         skills: profileData.skills,
         education: profileData.education,
         certifications: profileData.certifications,
@@ -90,6 +89,9 @@ export const useCandidateProfile = () => {
         experience_match_score: profileData.experience_match_score,
         education_match_score: profileData.education_match_score,
         resume_file_name: profileData.resume_file_name,
+        job_experience: profileData.job_experience || [],
+        education_history: profileData.education_history || [],
+        certification_history: profileData.certification_history || [],
         last_updated: new Date().toISOString()
       };
 

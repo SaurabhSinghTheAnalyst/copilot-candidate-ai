@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { User, Save, MapPin, Mail, Phone, Calendar } from 'lucide-react';
+import { User, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import ResumeParser from './ResumeParser';
 import CandidateScoreCard from './CandidateScoreCard';
+import JobExperienceSection from './profile/JobExperienceSection';
+import EducationSection from './profile/EducationSection';
+import CertificationSection from './profile/CertificationSection';
 import { useCandidateProfile } from '@/hooks/useCandidateProfile';
 
 interface ProfileData {
@@ -21,11 +24,7 @@ interface ProfileData {
   state: string;
   zipCode: string;
   summary: string;
-  jobTitles: string;
-  rolesResponsibilities: string;
   skills: string;
-  education: string;
-  certifications: string;
 }
 
 interface ScoreData {
@@ -47,13 +46,12 @@ const EditProfile = () => {
     state: '',
     zipCode: '',
     summary: '',
-    jobTitles: '',
-    rolesResponsibilities: '',
-    skills: '',
-    education: '',
-    certifications: ''
+    skills: ''
   });
   
+  const [jobExperience, setJobExperience] = useState<any[]>([]);
+  const [education, setEducation] = useState<any[]>([]);
+  const [certifications, setCertifications] = useState<any[]>([]);
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -71,12 +69,13 @@ const EditProfile = () => {
         state: profile.state || '',
         zipCode: profile.zip_code || '',
         summary: profile.professional_summary || '',
-        jobTitles: profile.job_titles?.join(', ') || '',
-        rolesResponsibilities: profile.roles_responsibilities?.join('\n') || '',
-        skills: profile.skills?.join(', ') || '',
-        education: profile.education || '',
-        certifications: profile.certifications?.join(', ') || ''
+        skills: profile.skills?.join(', ') || ''
       });
+
+      // Load structured data
+      setJobExperience(profile.job_experience || []);
+      setEducation(profile.education_history || []);
+      setCertifications(profile.certification_history || []);
 
       // Set score data if available
       if (profile.overall_score) {
@@ -106,16 +105,26 @@ const EditProfile = () => {
       city: personalInfo.city || profileData.city,
       state: personalInfo.state || profileData.state,
       summary: professionalInfo.summary || profileData.summary,
-      jobTitles: professionalInfo.jobTitles?.join(', ') || profileData.jobTitles,
-      rolesResponsibilities: professionalInfo.rolesResponsibilities?.join('\n') || profileData.rolesResponsibilities,
       skills: professionalInfo.skills?.join(', ') || profileData.skills,
-      education: professionalInfo.education || profileData.education,
-      certifications: professionalInfo.certifications?.join(', ') || profileData.certifications,
       zipCode: profileData.zipCode
     };
 
     setProfileData(updatedProfileData);
     setScoreData(score);
+
+    // Convert job titles and responsibilities to job experience format
+    if (professionalInfo.jobTitles && professionalInfo.rolesResponsibilities) {
+      const newJobExperience = professionalInfo.jobTitles.map((title: string, index: number) => ({
+        id: (Date.now() + index).toString(),
+        jobTitle: title,
+        company: 'Company Name',
+        startDate: '',
+        endDate: '',
+        responsibilities: professionalInfo.rolesResponsibilities[index] || '',
+        isCurrentJob: index === 0
+      }));
+      setJobExperience(newJobExperience);
+    }
 
     // Automatically save the parsed data to Supabase
     const candidateData = {
@@ -128,11 +137,10 @@ const EditProfile = () => {
       state: personalInfo.state,
       zip_code: profileData.zipCode,
       professional_summary: professionalInfo.summary,
-      job_titles: professionalInfo.jobTitles || [],
-      roles_responsibilities: professionalInfo.rolesResponsibilities || [],
       skills: professionalInfo.skills || [],
-      education: professionalInfo.education,
-      certifications: professionalInfo.certifications || [],
+      job_experience: newJobExperience || [],
+      education_history: education,
+      certification_history: certifications,
       overall_score: score.overall,
       skill_match_score: score.skillMatch,
       experience_match_score: score.experienceMatch,
@@ -166,11 +174,10 @@ const EditProfile = () => {
       state: profileData.state,
       zip_code: profileData.zipCode,
       professional_summary: profileData.summary,
-      job_titles: profileData.jobTitles ? profileData.jobTitles.split(',').map(s => s.trim()) : [],
-      roles_responsibilities: profileData.rolesResponsibilities ? profileData.rolesResponsibilities.split('\n').map(s => s.trim()).filter(s => s) : [],
       skills: profileData.skills ? profileData.skills.split(',').map(s => s.trim()) : [],
-      education: profileData.education,
-      certifications: profileData.certifications ? profileData.certifications.split(',').map(s => s.trim()) : [],
+      job_experience: jobExperience,
+      education_history: education,
+      certification_history: certifications,
       overall_score: scoreData?.overall,
       skill_match_score: scoreData?.skillMatch,
       experience_match_score: scoreData?.experienceMatch,
@@ -206,7 +213,8 @@ const EditProfile = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Form */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-8">
+          {/* Personal Information */}
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center space-x-2">
@@ -302,7 +310,7 @@ const EditProfile = () => {
                 </div>
               </div>
 
-              {/* Professional Information */}
+              {/* Professional Summary and Skills */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="summary">Professional Summary</Label>
@@ -311,27 +319,6 @@ const EditProfile = () => {
                     placeholder="Brief description of your professional background and career goals..."
                     value={profileData.summary}
                     onChange={(e) => handleInputChange('summary', e.target.value)}
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="jobTitles">Job Titles</Label>
-                  <Input
-                    id="jobTitles"
-                    placeholder="e.g., Software Developer, Frontend Engineer, Full Stack Developer"
-                    value={profileData.jobTitles}
-                    onChange={(e) => handleInputChange('jobTitles', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="rolesResponsibilities">Roles & Responsibilities</Label>
-                  <Textarea
-                    id="rolesResponsibilities"
-                    placeholder="Enter each role/responsibility on a new line..."
-                    value={profileData.rolesResponsibilities}
-                    onChange={(e) => handleInputChange('rolesResponsibilities', e.target.value)}
                     rows={4}
                   />
                 </div>
@@ -345,41 +332,51 @@ const EditProfile = () => {
                     onChange={(e) => handleInputChange('skills', e.target.value)}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="education">Education</Label>
-                  <Input
-                    id="education"
-                    placeholder="e.g., Bachelor's in Computer Science"
-                    value={profileData.education}
-                    onChange={(e) => handleInputChange('education', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="certifications">Certifications</Label>
-                  <Input
-                    id="certifications"
-                    placeholder="e.g., AWS Certified, PMP, etc."
-                    value={profileData.certifications}
-                    onChange={(e) => handleInputChange('certifications', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Save Button */}
-              <div className="pt-4">
-                <Button 
-                  onClick={handleSaveProfile}
-                  disabled={isSaving}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? 'Saving...' : 'Save Profile'}
-                </Button>
               </div>
             </CardContent>
           </Card>
+
+          {/* Work Experience */}
+          <Card>
+            <CardContent className="pt-6">
+              <JobExperienceSection 
+                jobExperience={jobExperience}
+                onChange={setJobExperience}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Education */}
+          <Card>
+            <CardContent className="pt-6">
+              <EducationSection 
+                education={education}
+                onChange={setEducation}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Certifications */}
+          <Card>
+            <CardContent className="pt-6">
+              <CertificationSection 
+                certifications={certifications}
+                onChange={setCertifications}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="pt-4">
+            <Button 
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save Profile'}
+            </Button>
+          </div>
         </div>
 
         {/* Score Card */}
