@@ -37,17 +37,18 @@ export type Database = {
           certifications: string[] | null
           city: string | null
           created_at: string | null
-          date_of_birth: string | null
           education: string | null
           education_history: Json | null
           education_match_score: number | null
           email: string | null
           experience_match_score: number | null
           first_name: string | null
+          github_url: string | null
           id: string
           job_experience: Json | null
           last_name: string | null
           last_updated: string | null
+          linkedin_url: string | null
           overall_score: number | null
           phone: string | null
           professional_summary: string | null
@@ -65,17 +66,18 @@ export type Database = {
           certifications?: string[] | null
           city?: string | null
           created_at?: string | null
-          date_of_birth?: string | null
           education?: string | null
           education_history?: Json | null
           education_match_score?: number | null
           email?: string | null
           experience_match_score?: number | null
           first_name?: string | null
+          github_url?: string | null
           id?: string
           job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
+          linkedin_url?: string | null
           overall_score?: number | null
           phone?: string | null
           professional_summary?: string | null
@@ -93,17 +95,18 @@ export type Database = {
           certifications?: string[] | null
           city?: string | null
           created_at?: string | null
-          date_of_birth?: string | null
           education?: string | null
           education_history?: Json | null
           education_match_score?: number | null
           email?: string | null
           experience_match_score?: number | null
           first_name?: string | null
+          github_url?: string | null
           id?: string
           job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
+          linkedin_url?: string | null
           overall_score?: number | null
           phone?: string | null
           professional_summary?: string | null

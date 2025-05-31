@@ -26,6 +26,8 @@ interface CandidateProfile {
   job_experience?: any[];
   education_history?: any[];
   certification_history?: any[];
+  github_url?: string;
+  linkedin_url?: string;
 }
 
 export const useCandidateProfile = () => {
@@ -100,6 +102,8 @@ export const useCandidateProfile = () => {
         job_experience: profileData.job_experience || [],
         education_history: profileData.education_history || [],
         certification_history: profileData.certification_history || [],
+        github_url: profileData.github_url,
+        linkedin_url: profileData.linkedin_url,
         last_updated: new Date().toISOString()
       };
 

@@ -74,8 +74,8 @@ const EditProfile = () => {
         zipCode: profile.zip_code || '',
         summary: profile.professional_summary || '',
         skills: profile.skills?.join(', ') || '',
-        githubPortfolio: '',
-        linkedinId: ''
+        githubPortfolio: profile.github_url || '',
+        linkedinId: profile.linkedin_url || ''
       });
 
       // Load structured data
@@ -153,7 +153,9 @@ const EditProfile = () => {
       skill_match_score: score.skillMatch,
       experience_match_score: score.experienceMatch,
       education_match_score: score.educationMatch,
-      resume_file_name: 'parsed_resume.pdf'
+      resume_file_name: 'parsed_resume.pdf',
+      github_url: personalInfo.githubPortfolio,
+      linkedin_url: personalInfo.linkedinId
     };
 
     await saveProfile(candidateData);
@@ -189,7 +191,9 @@ const EditProfile = () => {
       overall_score: scoreData?.overall,
       skill_match_score: scoreData?.skillMatch,
       experience_match_score: scoreData?.experienceMatch,
-      education_match_score: scoreData?.educationMatch
+      education_match_score: scoreData?.educationMatch,
+      github_url: profileData.githubPortfolio,
+      linkedin_url: profileData.linkedinId
     };
 
     await saveProfile(candidateData);
