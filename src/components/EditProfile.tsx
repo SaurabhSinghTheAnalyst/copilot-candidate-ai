@@ -25,6 +25,8 @@ interface ProfileData {
   zipCode: string;
   summary: string;
   skills: string;
+  githubPortfolio: string;
+  linkedinId: string;
 }
 
 interface ScoreData {
@@ -46,7 +48,9 @@ const EditProfile = () => {
     state: '',
     zipCode: '',
     summary: '',
-    skills: ''
+    skills: '',
+    githubPortfolio: '',
+    linkedinId: ''
   });
   
   const [jobExperience, setJobExperience] = useState<any[]>([]);
@@ -69,7 +73,9 @@ const EditProfile = () => {
         state: profile.state || '',
         zipCode: profile.zip_code || '',
         summary: profile.professional_summary || '',
-        skills: profile.skills?.join(', ') || ''
+        skills: profile.skills?.join(', ') || '',
+        githubPortfolio: '',
+        linkedinId: ''
       });
 
       // Load structured data
@@ -106,24 +112,26 @@ const EditProfile = () => {
       state: personalInfo.state || profileData.state,
       summary: professionalInfo.summary || profileData.summary,
       skills: professionalInfo.skills?.join(', ') || profileData.skills,
-      zipCode: profileData.zipCode
+      zipCode: profileData.zipCode,
+      githubPortfolio: personalInfo.githubPortfolio || profileData.githubPortfolio,
+      linkedinId: personalInfo.linkedinId || profileData.linkedinId
     };
 
     setProfileData(updatedProfileData);
     setScoreData(score);
 
-    // Convert job titles and responsibilities to job experience format
-    if (professionalInfo.jobTitles && professionalInfo.rolesResponsibilities) {
-      const newJobExperience = professionalInfo.jobTitles.map((title: string, index: number) => ({
+    // Convert employment details to job experience format
+    if (professionalInfo.employmentDetails && Array.isArray(professionalInfo.employmentDetails)) {
+      const jobExperienceData = professionalInfo.employmentDetails.map((job: any, index: number) => ({
         id: (Date.now() + index).toString(),
-        jobTitle: title,
-        company: 'Company Name',
-        startDate: '',
-        endDate: '',
-        responsibilities: professionalInfo.rolesResponsibilities[index] || '',
+        jobTitle: job.jobTitle || job.position || 'Position',
+        company: job.company || 'Company Name',
+        startDate: job.startDate || '',
+        endDate: job.endDate || '',
+        responsibilities: job.responsibilities || job.description || '',
         isCurrentJob: index === 0
       }));
-      setJobExperience(newJobExperience);
+      setJobExperience(jobExperienceData);
     }
 
     // Automatically save the parsed data to Supabase
@@ -138,7 +146,7 @@ const EditProfile = () => {
       zip_code: profileData.zipCode,
       professional_summary: professionalInfo.summary,
       skills: professionalInfo.skills || [],
-      job_experience: newJobExperience || [],
+      job_experience: jobExperience,
       education_history: education,
       certification_history: certifications,
       overall_score: score.overall,
@@ -264,6 +272,28 @@ const EditProfile = () => {
                     placeholder="Enter your phone number"
                     value={profileData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Professional Links */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="githubPortfolio">GitHub Portfolio</Label>
+                  <Input
+                    id="githubPortfolio"
+                    placeholder="https://github.com/username"
+                    value={profileData.githubPortfolio}
+                    onChange={(e) => handleInputChange('githubPortfolio', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedinId">LinkedIn Profile</Label>
+                  <Input
+                    id="linkedinId"
+                    placeholder="https://linkedin.com/in/username"
+                    value={profileData.linkedinId}
+                    onChange={(e) => handleInputChange('linkedinId', e.target.value)}
                   />
                 </div>
               </div>

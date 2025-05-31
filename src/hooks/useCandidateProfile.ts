@@ -49,7 +49,15 @@ export const useCandidateProfile = () => {
         return;
       }
 
-      setProfile(data);
+      // Safely handle JSON fields
+      const profileData = data ? {
+        ...data,
+        job_experience: Array.isArray(data.job_experience) ? data.job_experience : [],
+        education_history: Array.isArray(data.education_history) ? data.education_history : [],
+        certification_history: Array.isArray(data.certification_history) ? data.certification_history : []
+      } : null;
+
+      setProfile(profileData);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     } finally {
@@ -114,7 +122,15 @@ export const useCandidateProfile = () => {
         return false;
       }
 
-      setProfile(data);
+      // Safely handle JSON fields in response
+      const savedData = {
+        ...data,
+        job_experience: Array.isArray(data.job_experience) ? data.job_experience : [],
+        education_history: Array.isArray(data.education_history) ? data.education_history : [],
+        certification_history: Array.isArray(data.certification_history) ? data.certification_history : []
+      };
+
+      setProfile(savedData);
       toast({
         title: "Profile saved successfully!",
         description: "Your profile information has been updated",

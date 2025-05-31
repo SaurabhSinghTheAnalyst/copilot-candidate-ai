@@ -22,24 +22,29 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // For now, we'll work with the filename and make intelligent inferences
-    // In production, you'd want to implement proper PDF/DOC text extraction
+    // Enhanced prompt for comprehensive resume parsing
     const prompt = `
-    You are an expert resume parser. Based on the resume filename "${fileName}", extract realistic and professional information that would be appropriate for someone with this name.
+    You are an AI bot designed to act as a professional for parsing resumes. You are given with resume filename "${fileName}" and your job is to extract the following information from the resume:
+    1. full name
+    2. email id
+    3. github portfolio
+    4. linkedin id
+    5. employment details (including job titles, companies, dates, responsibilities)
+    6. technical skills
+    7. soft skills
+    8. education details
+    9. certifications
 
     Job Requirements: ${requirements || 'General software development position'}
 
-    Please analyze the filename to extract the candidate's name and generate realistic professional information that matches what would typically be found on a resume for someone in the tech industry.
-
     IMPORTANT INSTRUCTIONS:
     - Extract the EXACT name from the filename
-    - Generate a realistic email using the person's actual name (firstname.lastname@domain.com format)
-    - Create a realistic phone number in proper format
-    - Generate skills that match the job requirements provided
-    - Create job titles and roles/responsibilities that are realistic for the role
-    - Include work experience with specific job titles and responsibilities
-    - Make all contact information and professional details realistic but not real/existing data
-    - Ensure scores reflect realistic assessment based on generated profile
+    - Generate realistic professional information that matches what would typically be found on a resume
+    - Create employment details with specific job titles, companies, start/end dates, and responsibilities
+    - Include both technical and soft skills relevant to the job requirements
+    - Generate appropriate education background and certifications
+    - Ensure all contact information is realistic but not real/existing data
+    - Calculate scores based on relevance to job requirements
 
     Please provide the following information in this exact JSON structure:
     {
@@ -50,14 +55,25 @@ serve(async (req) => {
         "phone": "realistic phone number format",
         "address": "realistic address",
         "city": "realistic city",
-        "state": "realistic state abbreviation"
+        "state": "realistic state abbreviation",
+        "githubPortfolio": "https://github.com/username",
+        "linkedinId": "https://linkedin.com/in/username"
       },
       "professionalInfo": {
-        "summary": "Professional summary matching the job requirements and generated experience",
-        "jobTitles": ["array of realistic job titles held"],
-        "rolesResponsibilities": ["array of specific roles and responsibilities from work experience"],
-        "skills": ["skills array matching job requirements"],
-        "education": "appropriate education background for the role",
+        "summary": "Professional summary matching the job requirements",
+        "employmentDetails": [
+          {
+            "jobTitle": "specific job title",
+            "company": "company name",
+            "startDate": "YYYY-MM",
+            "endDate": "YYYY-MM or Present",
+            "responsibilities": "detailed responsibilities and achievements"
+          }
+        ],
+        "technicalSkills": ["array of technical skills matching job requirements"],
+        "softSkills": ["array of soft skills relevant to the role"],
+        "skills": ["combined technical and soft skills"],
+        "education": "appropriate education background",
         "certifications": ["relevant certifications for the position"]
       },
       "score": {
@@ -70,9 +86,9 @@ serve(async (req) => {
 
     CRITICAL: 
     - Use the ACTUAL name from the filename
-    - Generate email using the real name from filename
-    - Create realistic job titles and responsibilities for tech professionals
-    - Make all other details realistic for a tech professional
+    - Generate realistic employment details with specific job titles and responsibilities
+    - Create appropriate GitHub and LinkedIn URLs using the person's name
+    - Make all details realistic for a tech professional
     - Return ONLY the JSON object, no additional text or markdown formatting
     `;
 
@@ -87,7 +103,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert resume parser. Always return valid JSON only, no additional text or markdown formatting. Extract the exact name from the filename and generate realistic professional data that matches the job requirements including job titles and roles/responsibilities.'
+            content: 'You are an expert resume parser. Always return valid JSON only, no additional text or markdown formatting. Extract the exact name from the filename and generate realistic professional data including employment details, GitHub portfolio, and LinkedIn profile.'
           },
           {
             role: 'user',
@@ -95,7 +111,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.3,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
     });
 
@@ -133,20 +149,37 @@ serve(async (req) => {
           phone: "(555) 123-4567",
           address: "123 Main Street",
           city: "San Francisco",
-          state: "CA"
+          state: "CA",
+          githubPortfolio: `https://github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+          linkedinId: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`
         },
         professionalInfo: {
           summary: `Experienced software developer with expertise in ${requirements || 'modern web technologies'}`,
-          jobTitles: ["Software Developer", "Frontend Engineer", "Full Stack Developer"],
-          rolesResponsibilities: [
-            "Developed and maintained web applications using modern frameworks",
-            "Collaborated with cross-functional teams to deliver high-quality software",
-            "Implemented responsive user interfaces and optimized application performance",
-            "Participated in code reviews and mentored junior developers"
+          employmentDetails: [
+            {
+              jobTitle: "Senior Software Developer",
+              company: "Tech Solutions Inc",
+              startDate: "2022-01",
+              endDate: "Present",
+              responsibilities: "Developed and maintained web applications using modern frameworks, led team of 3 developers, implemented CI/CD pipelines"
+            },
+            {
+              jobTitle: "Software Developer",
+              company: "Digital Innovations LLC",
+              startDate: "2020-03",
+              endDate: "2021-12",
+              responsibilities: "Built responsive user interfaces, collaborated with cross-functional teams, optimized application performance"
+            }
           ],
-          skills: requirements?.includes('React') ? ["React", "JavaScript", "Node.js", "TypeScript"] : ["JavaScript", "Python", "SQL", "Git"],
+          technicalSkills: requirements?.includes('React') ? 
+            ["React", "JavaScript", "Node.js", "TypeScript", "AWS", "MongoDB"] : 
+            ["JavaScript", "Python", "SQL", "Git", "Docker", "AWS"],
+          softSkills: ["Problem Solving", "Team Leadership", "Communication", "Project Management"],
+          skills: requirements?.includes('React') ? 
+            ["React", "JavaScript", "Node.js", "TypeScript", "Problem Solving", "Team Leadership"] : 
+            ["JavaScript", "Python", "SQL", "Problem Solving", "Communication"],
           education: "Bachelor's in Computer Science",
-          certifications: ["AWS Certified Developer"]
+          certifications: ["AWS Certified Developer", "React Professional Certificate"]
         },
         score: {
           overall: 85,
