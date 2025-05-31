@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, Users, TrendingUp, Star, MapPin, Mail, Phone, ExternalLink, Copy, Zap, LogOut, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,12 +12,13 @@ import CandidateCard from '@/components/CandidateCard';
 import CandidateCarousel from '@/components/CandidateCarousel';
 import SearchResults from '@/components/SearchResults';
 import DashboardStats from '@/components/DashboardStats';
-import JobPostCreator from '@/components/JobPostCreator';
+import JobPostingModal from '@/components/JobPostingModal';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showJobModal, setShowJobModal] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ const Index = () => {
               <Search className="w-4 h-4" />
               <span>Search Candidates</span>
             </TabsTrigger>
-            <TabsTrigger value="post-job" className="flex items-center space-x-2">
+            <TabsTrigger value="post-job" className="flex items-center space-x-2" onClick={() => setShowJobModal(true)}>
               <Briefcase className="w-4 h-4" />
               <span>Post a Job</span>
             </TabsTrigger>
@@ -178,13 +178,22 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="post-job">
-            <JobPostCreator />
+            {/* This content won't be shown since we're using the modal */}
+            <div className="text-center py-16">
+              <p className="text-gray-500">Job posting modal will open automatically</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="dashboard">
             <DashboardStats />
           </TabsContent>
         </Tabs>
+
+        {/* Job Posting Modal */}
+        <JobPostingModal 
+          isOpen={showJobModal} 
+          onClose={() => setShowJobModal(false)} 
+        />
       </div>
     </div>
   );
