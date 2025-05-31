@@ -1,7 +1,6 @@
 
-import { Star, Award, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { Star, Award, TrendingUp, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 interface ProfileData {
@@ -72,7 +71,7 @@ const ProfileCompletenessCard = ({ profile, className }: ProfileCompletenessCard
     return { score: totalScore, completedFields, missingFields };
   };
 
-  const { score, completedFields, missingFields } = calculateCompleteness();
+  const { score, missingFields } = calculateCompleteness();
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -121,28 +120,6 @@ const ProfileCompletenessCard = ({ profile, className }: ProfileCompletenessCard
             />
           </div>
         </div>
-
-        {/* Completed Fields */}
-        {completedFields.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="font-medium text-green-800 flex items-center">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Completed ({completedFields.length})
-            </h4>
-            <div className="flex flex-wrap gap-1">
-              {completedFields.slice(0, 5).map((field) => (
-                <Badge key={field} variant="secondary" className="text-xs bg-green-100 text-green-700">
-                  {field}
-                </Badge>
-              ))}
-              {completedFields.length > 5 && (
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                  +{completedFields.length - 5} more
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Missing Fields */}
         {missingFields.length > 0 && (
