@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -81,59 +80,53 @@ const EditProfile = () => {
   };
 
   const handleResumeDataParsed = async (parsedData: any) => {
-    const { personalInfo, professionalInfo } = parsedData;
-    
+    // Map flat structure from parsedData
     const updatedProfileData = {
-      firstName: personalInfo.firstName || profileData.firstName,
-      lastName: personalInfo.lastName || profileData.lastName,
-      email: personalInfo.email || profileData.email,
-      phone: personalInfo.phone || profileData.phone,
-      address: personalInfo.address || profileData.address,
-      city: personalInfo.city || profileData.city,
-      state: personalInfo.state || profileData.state,
-      summary: professionalInfo.summary || profileData.summary,
-      skills: professionalInfo.skills?.join(', ') || profileData.skills,
+      firstName: parsedData.first_name || profileData.firstName,
+      lastName: parsedData.last_name || profileData.lastName,
+      email: parsedData.email || profileData.email,
+      phone: parsedData.phone || profileData.phone,
+      address: parsedData.address || profileData.address,
+      city: parsedData.city || profileData.city,
+      state: parsedData.state || profileData.state,
+      summary: parsedData.professional_summary || profileData.summary,
+      skills: Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : profileData.skills,
       zipCode: profileData.zipCode,
-      githubPortfolio: personalInfo.githubPortfolio || profileData.githubPortfolio,
-      linkedinId: personalInfo.linkedinId || profileData.linkedinId
+      githubPortfolio: parsedData.github_url || profileData.githubPortfolio,
+      linkedinId: parsedData.linkedin_url || profileData.linkedinId
     };
-
     setProfileData(updatedProfileData);
 
-    // Convert employment details to job experience format
-    if (professionalInfo.employmentDetails && Array.isArray(professionalInfo.employmentDetails)) {
-      const jobExperienceData = professionalInfo.employmentDetails.map((job: any, index: number) => ({
-        id: (Date.now() + index).toString(),
-        jobTitle: job.jobTitle || job.position || 'Position',
-        company: job.company || 'Company Name',
-        startDate: job.startDate || '',
-        endDate: job.endDate || '',
-        responsibilities: job.responsibilities || job.description || '',
-        isCurrentJob: index === 0
-      }));
-      setJobExperience(jobExperienceData);
+    // Set job experience, education, certifications if present
+    if (Array.isArray(parsedData.job_experience)) {
+      setJobExperience(parsedData.job_experience);
+    }
+    if (Array.isArray(parsedData.education_history)) {
+      setEducation(parsedData.education_history);
+    }
+    if (Array.isArray(parsedData.certification_history)) {
+      setCertifications(parsedData.certification_history);
     }
 
     // Automatically save the parsed data to Supabase
     const candidateData = {
-      first_name: personalInfo.firstName,
-      last_name: personalInfo.lastName,
-      email: personalInfo.email,
-      phone: personalInfo.phone,
-      address: personalInfo.address,
-      city: personalInfo.city,
-      state: personalInfo.state,
-      zip_code: profileData.zipCode,
-      professional_summary: professionalInfo.summary,
-      skills: professionalInfo.skills || [],
-      job_experience: jobExperience,
-      education_history: education,
-      certification_history: certifications,
+      first_name: updatedProfileData.firstName,
+      last_name: updatedProfileData.lastName,
+      email: updatedProfileData.email,
+      phone: updatedProfileData.phone,
+      address: updatedProfileData.address,
+      city: updatedProfileData.city,
+      state: updatedProfileData.state,
+      zip_code: updatedProfileData.zipCode,
+      professional_summary: updatedProfileData.summary,
+      skills: Array.isArray(parsedData.skills) ? parsedData.skills : [],
+      job_experience: Array.isArray(parsedData.job_experience) ? parsedData.job_experience : [],
+      education_history: Array.isArray(parsedData.education_history) ? parsedData.education_history : [],
+      certification_history: Array.isArray(parsedData.certification_history) ? parsedData.certification_history : [],
       resume_file_name: 'parsed_resume.pdf',
-      github_url: personalInfo.githubPortfolio,
-      linkedin_url: personalInfo.linkedinId
+      github_url: updatedProfileData.githubPortfolio,
+      linkedin_url: updatedProfileData.linkedinId
     };
-
     await saveProfile(candidateData);
   };
 

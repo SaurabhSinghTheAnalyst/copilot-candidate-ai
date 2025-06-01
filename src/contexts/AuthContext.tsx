@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Signup error:', error);
         return { error };
+      }
+      
+      // Ensure the user is created with the correct role metadata
+      if (data.user) {
+        console.log('User created with role:', validRole);
       }
       
       console.log('Signup successful:', data.user?.id);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Briefcase, Users, MapPin, Mail, Phone, FileText, Zap, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import JobSearchResults from '@/components/JobSearchResults';
-import CandidateDashboard from '@/components/CandidateDashboard';
+import UploadArea from '@/components/UploadArea';
+import JobList from '@/components/JobList';
+import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 
 const Candidate = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +20,30 @@ const Candidate = () => {
   const [showResults, setShowResults] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { role, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState<string | null>(null);
+
+  // Helper to capitalize first letter and lowercase the rest
+  const formatName = (name: string | null | undefined) => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('first_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data && data.first_name) {
+        setFirstName(data.first_name);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -55,14 +81,22 @@ const Candidate = () => {
     });
   };
 
+  // Debug UI and fallback
+  if (roleLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>;
+  }
+  if (role !== 'candidate') {
+    return <div className="min-h-screen flex items-center justify-center text-red-600 text-xl font-bold">Access denied: You are not a candidate. (Role: {role || 'none'})</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -71,27 +105,25 @@ const Candidate = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-                Welcome, {user?.email}
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
+                Welcome, {firstName ? formatName(firstName) : user?.email}
               </Badge>
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+              <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
       </header>
-
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="search" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-blue-50">
+            <TabsTrigger value="search" className="flex items-center space-x-2 hover:bg-blue-100 hover:text-blue-700 data-[state=active]:bg-blue-200 data-[state=active]:text-blue-700">
               <Search className="w-4 h-4" />
               <span>Find Jobs</span>
             </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2 hover:bg-blue-100 hover:text-blue-700 data-[state=active]:bg-blue-200 data-[state=active]:text-blue-700">
               <Users className="w-4 h-4" />
               <span>My Profile</span>
             </TabsTrigger>
@@ -123,7 +155,7 @@ const Candidate = () => {
                   <Button
                     onClick={handleSearch}
                     disabled={isSearching}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   >
                     {isSearching ? (
                       <div className="flex items-center space-x-2">
@@ -150,7 +182,7 @@ const Candidate = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSearchQuery(example)}
-                    className="text-sm hover:bg-green-50 hover:border-green-300"
+                    className="text-sm hover:bg-blue-50 hover:border-blue-300"
                   >
                     {example}
                   </Button>
@@ -158,62 +190,10 @@ const Candidate = () => {
               </div>
             </div>
 
-            {/* Featured Jobs Section */}
+            {/* Show JobList for candidates instead of featured jobs */}
             {!showResults && (
               <div className="mt-12">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Featured Opportunities</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[
-                    {
-                      title: "Senior React Developer",
-                      company: "TechCorp Inc.",
-                      location: "San Francisco, CA",
-                      type: "Full-time",
-                      salary: "$120k - $150k",
-                      skills: ["React", "TypeScript", "Node.js"]
-                    },
-                    {
-                      title: "Product Manager",
-                      company: "Innovation Labs",
-                      location: "Remote",
-                      type: "Full-time",
-                      salary: "$90k - $120k",
-                      skills: ["Product Strategy", "Analytics", "Leadership"]
-                    },
-                    {
-                      title: "UX Designer",
-                      company: "Design Studio",
-                      location: "New York, NY",
-                      type: "Contract",
-                      salary: "$80k - $100k",
-                      skills: ["Figma", "User Research", "Prototyping"]
-                    }
-                  ].map((job, index) => (
-                    <Card key={index} className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">{job.title}</CardTitle>
-                        <p className="text-gray-600">{job.company}</p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {job.location}
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <Badge variant="secondary">{job.type}</Badge>
-                          <span className="font-semibold text-green-600">{job.salary}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {job.skills.map((skill) => (
-                            <Badge key={skill} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <JobList />
               </div>
             )}
 
@@ -222,7 +202,7 @@ const Candidate = () => {
           </TabsContent>
 
           <TabsContent value="dashboard">
-            <CandidateDashboard />
+            <UploadArea />
           </TabsContent>
         </Tabs>
       </div>

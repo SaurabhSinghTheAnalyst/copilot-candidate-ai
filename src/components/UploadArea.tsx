@@ -1,412 +1,706 @@
-
-import { useState, useCallback } from 'react';
-import { Upload, File, CheckCircle, AlertCircle, X, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { User, Upload, Briefcase, GraduationCap, MapPin, Mail, Phone, Globe, Linkedin, Github } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ResumeParser from './ResumeParser';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface WorkExperience {
+  company: string;
+  position: string;
+  start_date: string;
+  end_date: string;
+  responsibilities: string[];
+}
+
+interface Education {
+  degree: string;
+  institution: string;
+  start_date: string;
+  end_date: string;
+}
 
 interface CandidateInfo {
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
+  github: string;
+  linkedin: string;
   location: string;
+  city: string;
+  state: string;
+  professionalSummary: string;
+  workExperience: WorkExperience[];
+  education: Education[];
   interestedIn: string;
   requiresVisa: boolean;
   visaExpiry?: string;
 }
 
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  status: 'uploading' | 'processing' | 'complete' | 'error';
-  progress: number;
-  extractedData?: {
-    name: string;
-    skills: string[];
-    location: string;
-  };
-}
-
 const UploadArea = () => {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [showForm, setShowForm] = useState(false);
   const [candidateInfo, setCandidateInfo] = useState<CandidateInfo>({
     name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
+    github: '',
+    linkedin: '',
     location: '',
+    city: '',
+    state: '',
+    professionalSummary: '',
+    workExperience: [],
+    education: [],
     interestedIn: '',
     requiresVisa: false,
     visaExpiry: undefined
   });
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [editingWorkIdx, setEditingWorkIdx] = useState<number | null>(null);
+  const [editingEduIdx, setEditingEduIdx] = useState<number | null>(null);
+  const [workDraft, setWorkDraft] = useState<WorkExperience | null>(null);
+  const [eduDraft, setEduDraft] = useState<Education | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const processFile = (file: File) => {
-    const fileId = Math.random().toString(36);
-    const newFile: UploadedFile = {
-      id: fileId,
-      name: file.name,
-      size: file.size,
-      status: 'uploading',
-      progress: 0
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) {
+        setCandidateInfo(prev => ({
+          ...prev,
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          github: data.github_url || '',
+          linkedin: data.linkedin_url || '',
+          city: data.city || '',
+          state: data.state || '',
+          professionalSummary: data.professional_summary || '',
+          workExperience: Array.isArray(data.job_experience) ? (data.job_experience as unknown as WorkExperience[]) : [],
+          education: Array.isArray(data.education_history) ? (data.education_history as unknown as Education[]) : [],
+          interestedIn: 'interested_in' in data ? (data.interested_in as string) || '' : '',
+          requiresVisa: 'requires_visa' in data ? Boolean(data.requires_visa) : false,
+          visaExpiry: 'visa_expiry' in data ? (data.visa_expiry as string) || undefined : undefined,
+        }));
+      }
     };
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-    setFiles(prev => [...prev, newFile]);
+  // Handler to map backend AI data to form fields
+  const handleResumeParsed = (data: any) => {
+    console.log('UploadArea received parsed data:', data);
+    setParsedData(data); // Save for summary generation
 
-    // Simulate file upload and processing
-    const uploadInterval = setInterval(() => {
-      setFiles(prev => prev.map(f => 
-        f.id === fileId 
-          ? { ...f, progress: Math.min(f.progress + 10, 100) }
-          : f
-      ));
-    }, 200);
+    // Support both backend key styles
+    let firstName = data.first_name || (data.full_name ? data.full_name.split(' ')[0] : '');
+    let lastName = data.last_name || (data.full_name ? data.full_name.split(' ').slice(1).join(' ') : '');
 
-    setTimeout(() => {
-      clearInterval(uploadInterval);
-      setFiles(prev => prev.map(f => 
-        f.id === fileId 
-          ? { ...f, status: 'processing', progress: 100 }
-          : f
-      ));
+    // If firstName contains a space, split it
+    if (firstName && firstName.includes(' ')) {
+      const parts = firstName.trim().split(' ');
+      if (!lastName || lastName.toLowerCase() === parts[parts.length - 1].toLowerCase()) {
+        lastName = parts.slice(1).join(' ');
+      }
+      firstName = parts[0];
+    }
 
-      // Simulate AI processing
-      setTimeout(() => {
-        setFiles(prev => prev.map(f => 
-          f.id === fileId 
-            ? { 
-                ...f, 
-                status: 'complete',
-                extractedData: {
-                  name: candidateInfo.name || 'John Doe',
-                  skills: ['React', 'Node.js', 'TypeScript'],
-                  location: candidateInfo.location || 'New York, NY'
-                }
-              }
-            : f
-        ));
-        
-        toast({
-          title: "Resume processed!",
-          description: `Successfully extracted data from ${file.name}`,
-        });
-      }, 2000);
-    }, 2000);
+    // Normalize workExperience so responsibilities is always an array
+    const rawWork = Array.isArray(data.job_experience)
+      ? data.job_experience
+      : Array.isArray(data.employment_details)
+        ? data.employment_details
+        : [];
+    const workExperience = rawWork.map((job: any) => ({
+      ...job,
+      responsibilities: Array.isArray(job.responsibilities)
+        ? job.responsibilities
+        : typeof job.responsibilities === 'string' && job.responsibilities
+          ? [job.responsibilities]
+          : [],
+    }));
+
+    setCandidateInfo(prev => ({
+      ...prev,
+      firstName,
+      lastName,
+      email: data.email || prev.email,
+      phone: data.phone || prev.phone,
+      github: data.github_url || data.github || prev.github,
+      linkedin: data.linkedin_url || data.linkedin || data.linkedinId || prev.linkedin,
+      city: data.city || prev.city,
+      state: data.state || prev.state,
+      professionalSummary: data.professional_summary || data.summary || prev.professionalSummary,
+      workExperience: workExperience.length > 0 ? workExperience : prev.workExperience,
+      education: Array.isArray(data.education_history)
+        ? data.education_history
+        : Array.isArray(data.education)
+          ? data.education
+          : prev.education,
+      // Optionally map skills/certifications if you have those fields in your form
+      // skills: data.skills || data.technical_skills || [],
+      // certifications: data.certifications || [],
+    }));
+
+    // Reset editing states
+    setWorkDraft(null);
+    setEditingWorkIdx(null);
+    setEduDraft(null);
+    setEditingEduIdx(null);
+
+    // Show success toast
+    toast({
+      title: "Resume parsed successfully!",
+      description: "Your profile has been auto-filled with extracted data",
+    });
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    if (!isFormValid()) {
-      toast({
-        title: "Please fill out candidate information",
-        description: "Complete the form before uploading files",
-        variant: "destructive"
+  // Generate professional summary using OpenAI
+  const handleGenerateSummary = async () => {
+    if (!parsedData) return;
+    setIsGeneratingSummary(true);
+    try {
+      const response = await fetch('http://localhost:8000/generate-summary/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsedData)
       });
-      return;
+      const result = await response.json();
+      setCandidateInfo(prev => ({ ...prev, professionalSummary: result.summary || '' }));
+    } catch (err) {
+      alert('Failed to generate summary.');
+    } finally {
+      setIsGeneratingSummary(false);
     }
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    droppedFiles.forEach(processFile);
-  }, [candidateInfo]);
+  };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isFormValid()) {
-      toast({
-        title: "Please fill out candidate information",
-        description: "Complete the form before uploading files",
-        variant: "destructive"
+  // Work Experience Section
+  const handleEditWork = (idx: number) => {
+    setEditingWorkIdx(idx);
+    setWorkDraft({ ...candidateInfo.workExperience[idx] });
+  };
+  const handleSaveWork = (idx: number) => {
+    setCandidateInfo(prev => ({
+      ...prev,
+      workExperience: prev.workExperience.map((job, i) => i === idx ? workDraft! : job)
+    }));
+    setEditingWorkIdx(null);
+    setWorkDraft(null);
+  };
+  const handleDeleteWork = (idx: number) => {
+    setCandidateInfo(prev => ({
+      ...prev,
+      workExperience: prev.workExperience.filter((_, i) => i !== idx)
+    }));
+    setEditingWorkIdx(null);
+    setWorkDraft(null);
+  };
+
+  // Education Section
+  const handleEditEdu = (idx: number) => {
+    setEditingEduIdx(idx);
+    setEduDraft({ ...candidateInfo.education[idx] });
+  };
+  const handleSaveEdu = (idx: number) => {
+    setCandidateInfo(prev => ({
+      ...prev,
+      education: prev.education.map((edu, i) => i === idx ? eduDraft! : edu)
+    }));
+    setEditingEduIdx(null);
+    setEduDraft(null);
+  };
+  const handleDeleteEdu = (idx: number) => {
+    setCandidateInfo(prev => ({
+      ...prev,
+      education: prev.education.filter((_, i) => i !== idx)
+    }));
+    setEditingEduIdx(null);
+    setEduDraft(null);
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const userId = parsedData?.user_id || '';
+      const payload = {
+        user_id: userId,
+        first_name: candidateInfo.firstName,
+        last_name: candidateInfo.lastName,
+        email: candidateInfo.email,
+        phone: candidateInfo.phone,
+        github_url: candidateInfo.github,
+        linkedin_url: candidateInfo.linkedin,
+        city: candidateInfo.city,
+        state: candidateInfo.state,
+        professional_summary: candidateInfo.professionalSummary,
+        job_experience: candidateInfo.workExperience,
+        education_history: candidateInfo.education,
+        interested_in: candidateInfo.interestedIn,
+        requires_visa: candidateInfo.requiresVisa,
+        visa_expiry: candidateInfo.visaExpiry,
+        // Add more fields as needed
+      };
+      const response = await fetch('http://localhost:8000/save-candidate/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-      return;
-    }
-    
-    const selectedFiles = Array.from(e.target.files || []);
-    selectedFiles.forEach(processFile);
-  };
-
-  const isFormValid = () => {
-    return candidateInfo.name && 
-           candidateInfo.email && 
-           candidateInfo.phone && 
-           candidateInfo.location && 
-           candidateInfo.interestedIn &&
-           (!candidateInfo.requiresVisa || candidateInfo.visaExpiry);
-  };
-
-  const removeFile = (fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getStatusIcon = (status: UploadedFile['status']) => {
-    switch (status) {
-      case 'complete':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <File className="w-5 h-5 text-blue-500" />;
-    }
-  };
-
-  const getStatusText = (file: UploadedFile) => {
-    switch (file.status) {
-      case 'uploading':
-        return 'Uploading...';
-      case 'processing':
-        return 'Processing with AI...';
-      case 'complete':
-        return 'Complete';
-      case 'error':
-        return 'Error';
+      if (response.ok) {
+        toast({ title: 'Profile saved!', description: 'Your profile has been updated.' });
+      } else {
+        toast({ title: 'Save failed', description: 'Could not save your profile.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Save failed', description: 'An error occurred.', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">Upload Resumes</h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Fill out candidate information and upload resumes. AI will extract skills, experience, and contact information automatically.
+    <div className="max-w-4xl mx-auto space-y-12">
+      {/* Header Section */}
+      <div className="text-center space-y-6">
+        <h2 className="text-4xl font-bold text-gray-900 tracking-tight">My Profile</h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          Upload your resume and let AI help you create a professional profile that stands out to recruiters.
         </p>
       </div>
 
-      {/* Candidate Information Form */}
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2">
-            <User className="w-5 h-5" />
-            <span>Candidate Information</span>
-          </CardTitle>
+      {/* Resume Upload Section */}
+      <Card className="border-2 border-dashed border-gray-200 hover:border-blue-500 transition-colors">
+        <CardContent className="p-8">
+          <ResumeParser onDataParsed={handleResumeParsed} />
+        </CardContent>
+      </Card>
+
+      {/* Personal Information Section */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardTitle className="text-2xl font-semibold text-gray-900">Personal Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
+              <Label className="text-sm font-medium text-gray-700">First Name</Label>
               <Input
-                id="name"
-                placeholder="Enter full name"
-                value={candidateInfo.name}
-                onChange={(e) => setCandidateInfo(prev => ({ ...prev, name: e.target.value }))}
+                value={candidateInfo.firstName}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label className="text-sm font-medium text-gray-700">Last Name</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="Enter email address"
-                value={candidateInfo.email}
-                onChange={(e) => setCandidateInfo(prev => ({ ...prev, email: e.target.value }))}
+                value={candidateInfo.lastName}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                className="h-11"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
-              <Input
-                id="phone"
-                placeholder="Enter phone number"
-                value={candidateInfo.phone}
-                onChange={(e) => setCandidateInfo(prev => ({ ...prev, phone: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                placeholder="City, Country"
-                value={candidateInfo.location}
-                onChange={(e) => setCandidateInfo(prev => ({ ...prev, location: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Interested In *</Label>
-            <RadioGroup 
-              value={candidateInfo.interestedIn} 
-              onValueChange={(value) => setCandidateInfo(prev => ({ ...prev, interestedIn: value }))}
-              className="flex flex-wrap gap-6"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="contract" id="contract" />
-                <Label htmlFor="contract">Contract</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="full-time" id="full-time" />
-                <Label htmlFor="full-time">Full-time</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="part-time" id="part-time" />
-                <Label htmlFor="part-time">Part-time</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="casual" id="casual" />
-                <Label htmlFor="casual">Casual</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="requiresVisa"
-                checked={candidateInfo.requiresVisa}
-                onCheckedChange={(checked) => 
-                  setCandidateInfo(prev => ({ 
-                    ...prev, 
-                    requiresVisa: checked as boolean,
-                    visaExpiry: checked ? prev.visaExpiry : undefined
-                  }))
-                }
-              />
-              <Label htmlFor="requiresVisa">Do you require a visa to work at this job location?</Label>
-            </div>
-
-            {candidateInfo.requiresVisa && (
-              <div className="space-y-2 ml-6">
-                <Label htmlFor="visaExpiry">Visa Expiry Date *</Label>
+              <Label className="text-sm font-medium text-gray-700">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  id="visaExpiry"
-                  type="date"
-                  value={candidateInfo.visaExpiry || ''}
-                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, visaExpiry: e.target.value }))}
+                  value={candidateInfo.email}
+                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, email: e.target.value }))}
+                  className="h-11 pl-10"
                 />
               </div>
-            )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Phone</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                value={candidateInfo.phone}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, phone: e.target.value }))}
+                  className="h-11 pl-10"
+                />
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Upload Area */}
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="p-0">
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-all duration-200 ${
-              isDragOver 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
-            } ${
-              !isFormValid() ? 'opacity-50 pointer-events-none' : ''
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Drop your resume files here
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Support for PDF, DOC, and DOCX files up to 10MB each
-            </p>
-            {!isFormValid() && (
-              <p className="text-red-500 text-sm mb-4">
-                Please complete the candidate information form above before uploading files
-              </p>
-            )}
-            <div className="space-y-3">
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload"
-                disabled={!isFormValid()}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">City</Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  value={candidateInfo.city}
+                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, city: e.target.value }))}
+                  className="h-11 pl-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">State</Label>
+              <Input
+                value={candidateInfo.state}
+                onChange={(e) => setCandidateInfo(prev => ({ ...prev, state: e.target.value }))}
+                className="h-11"
               />
-              <label htmlFor="file-upload">
-                <Button 
-                  asChild 
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  disabled={!isFormValid()}
-                >
-                  <span className="cursor-pointer">Choose Files</span>
-                </Button>
-              </label>
-              <p className="text-sm text-gray-500">
-                or drag and drop files here
-              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">LinkedIn</Label>
+              <div className="relative">
+                <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  value={candidateInfo.linkedin}
+                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, linkedin: e.target.value }))}
+                  className="h-11 pl-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">GitHub</Label>
+              <div className="relative">
+                <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  value={candidateInfo.github}
+                  onChange={(e) => setCandidateInfo(prev => ({ ...prev, github: e.target.value }))}
+                  className="h-11 pl-10"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* File List */}
-      {files.length > 0 && (
-        <div className="max-w-2xl mx-auto space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Processing Files</h3>
-          <div className="space-y-3">
-            {files.map((file) => (
-              <Card key={file.id} className="p-4">
+      {/* Professional Summary Section */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardTitle className="text-2xl font-semibold text-gray-900">Professional Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 space-y-4">
+          <Textarea
+            value={candidateInfo.professionalSummary}
+            onChange={(e) => setCandidateInfo(prev => ({ ...prev, professionalSummary: e.target.value }))}
+            className="min-h-[150px] resize-none"
+            placeholder="Write a compelling summary of your professional background..."
+          />
+          <Button
+            onClick={handleGenerateSummary}
+            disabled={isGeneratingSummary || !parsedData}
+            className="w-full md:w-auto"
+          >
+            {isGeneratingSummary ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Generating...</span>
+              </div>
+            ) : (
+              'Generate Summary with AI'
+            )}
+                </Button>
+        </CardContent>
+      </Card>
+
+      {/* Work Experience Section */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    {getStatusIcon(file.status)}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">{file.name}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeFile(file.id)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+            <CardTitle className="text-2xl font-semibold text-gray-900">Work Experience</CardTitle>
+            <Button
+              onClick={() => {
+                setCandidateInfo(prev => ({
+                  ...prev,
+                  workExperience: [
+                    ...prev.workExperience,
+                    {
+                      company: '',
+                      position: '',
+                      start_date: '',
+                      end_date: '',
+                      responsibilities: []
+                    }
+                  ]
+                }));
+                setWorkDraft({
+                  company: '',
+                  position: '',
+                  start_date: '',
+                  end_date: '',
+                  responsibilities: []
+                });
+                setEditingWorkIdx(candidateInfo.workExperience.length);
+              }}
+              className="bg-blue-600 hover:bg-indigo-700"
+            >
+              <Briefcase className="w-4 h-4 mr-2" />
+              Add Experience
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-8 space-y-6">
+          {candidateInfo.workExperience.map((job, idx) => (
+            <Card key={idx} className="border border-gray-200">
+              <CardContent className="p-6">
+                {editingWorkIdx === idx ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Company</Label>
+                        <Input
+                          value={workDraft?.company}
+                          onChange={(e) => setWorkDraft(prev => ({ ...prev!, company: e.target.value }))}
+                        />
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>{formatFileSize(file.size)}</span>
-                        <span>{getStatusText(file)}</span>
+                      <div className="space-y-2">
+                        <Label>Position</Label>
+                        <Input
+                          value={workDraft?.position}
+                          onChange={(e) => setWorkDraft(prev => ({ ...prev!, position: e.target.value }))}
+                        />
                       </div>
-                      {(file.status === 'uploading' || file.status === 'processing') && (
-                        <Progress value={file.progress} className="mt-2" />
-                      )}
-                      {file.status === 'complete' && file.extractedData && (
-                        <div className="mt-2 p-2 bg-green-50 rounded text-sm">
-                          <span className="font-medium text-green-700">Extracted: </span>
-                          <span className="text-green-600">
-                            {file.extractedData.name} • {file.extractedData.location} • 
-                            {file.extractedData.skills.slice(0, 3).join(', ')}
-                            {file.extractedData.skills.length > 3 && ` +${file.extractedData.skills.length - 3} more`}
-                          </span>
-                        </div>
-                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Input
+                          type="date"
+                          value={workDraft?.start_date}
+                          onChange={(e) => setWorkDraft(prev => ({ ...prev!, start_date: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Input
+                          type="date"
+                          value={workDraft?.end_date}
+                          onChange={(e) => setWorkDraft(prev => ({ ...prev!, end_date: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Responsibilities</Label>
+                      <Textarea
+                        value={workDraft?.responsibilities.join('\n')}
+                        onChange={(e) => setWorkDraft(prev => ({
+                          ...prev!,
+                          responsibilities: e.target.value.split('\n').filter(Boolean)
+                        }))}
+                        placeholder="Enter each responsibility on a new line"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingWorkIdx(null);
+                          setWorkDraft(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={() => handleSaveWork(idx)}>Save</Button>
                     </div>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{job.position}</h3>
+                        <p className="text-gray-600">{job.company}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(job.start_date).toLocaleDateString()} - {new Date(job.end_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditWork(idx)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteWork(idx)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                      {job.responsibilities.map((resp, i) => (
+                        <li key={i}>{resp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Education Section */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-semibold text-gray-900">Education</CardTitle>
+            <Button
+              onClick={() => {
+                setCandidateInfo(prev => ({
+                  ...prev,
+                  education: [
+                    ...prev.education,
+                    {
+                      degree: '',
+                      institution: '',
+                      start_date: '',
+                      end_date: ''
+                    }
+                  ]
+                }));
+                setEduDraft({
+                  degree: '',
+                  institution: '',
+                  start_date: '',
+                  end_date: ''
+                });
+                setEditingEduIdx(candidateInfo.education.length);
+              }}
+              className="bg-blue-600 hover:bg-indigo-700"
+            >
+              <GraduationCap className="w-4 h-4 mr-2" />
+              Add Education
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-8 space-y-6">
+          {candidateInfo.education.map((edu, idx) => (
+            <Card key={idx} className="border border-gray-200">
+              <CardContent className="p-6">
+                {editingEduIdx === idx ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Degree</Label>
+                        <Input
+                          value={eduDraft?.degree}
+                          onChange={(e) => setEduDraft(prev => ({ ...prev!, degree: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Institution</Label>
+                        <Input
+                          value={eduDraft?.institution}
+                          onChange={(e) => setEduDraft(prev => ({ ...prev!, institution: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Input
+                          type="date"
+                          value={eduDraft?.start_date}
+                          onChange={(e) => setEduDraft(prev => ({ ...prev!, start_date: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Input
+                          type="date"
+                          value={eduDraft?.end_date}
+                          onChange={(e) => setEduDraft(prev => ({ ...prev!, end_date: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingEduIdx(null);
+                          setEduDraft(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={() => handleSaveEdu(idx)}>Save</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{edu.degree}</h3>
+                      <p className="text-gray-600">{edu.institution}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(edu.start_date).toLocaleDateString()} - {new Date(edu.end_date).toLocaleDateString()}
+                      </p>
                 </div>
-              </Card>
-            ))}
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditEdu(idx)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteEdu(idx)}
+                      >
+                        Delete
+                      </Button>
           </div>
         </div>
       )}
+              </CardContent>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSaveProfile}
+          disabled={isSaving}
+          className="px-8 py-6 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+        >
+          {isSaving ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </div>
+          ) : (
+            'Save Profile'
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

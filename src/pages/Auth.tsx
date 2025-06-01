@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,11 +9,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Zap, Mail, Lock, User, Users, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [signInError, setSignInError] = useState('');
+  const [signUpError, setSignUpError] = useState('');
 
   // Redirect if already authenticated
   if (user) {
@@ -24,6 +26,7 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setSignInError('');
     
     try {
       const formData = new FormData(e.currentTarget);
@@ -35,6 +38,7 @@ const Auth = () => {
       
       if (error) {
         console.error('Sign in error:', error);
+        setSignInError(error.message || 'An error occurred during sign in');
         toast({
           title: "Sign in failed",
           description: error.message || "An error occurred during sign in",
@@ -48,6 +52,7 @@ const Auth = () => {
       }
     } catch (err) {
       console.error('Sign in catch error:', err);
+      setSignInError('An unexpected error occurred');
       toast({
         title: "Sign in failed",
         description: "An unexpected error occurred",
@@ -61,7 +66,7 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setSignUpError('');
     try {
       const formData = new FormData(e.currentTarget);
       const email = formData.get('email') as string;
@@ -70,38 +75,62 @@ const Auth = () => {
       const role = formData.get('role') as string;
 
       console.log('Sign up attempt:', { email, fullName, role });
-      
       if (!email || !password || !fullName || !role) {
-        toast({
-          title: "Sign up failed",
-          description: "Please fill in all required fields",
-          variant: "destructive"
-        });
+        setSignUpError('Please fill in all required fields');
+        toast({ title: 'Sign up failed', description: 'Please fill in all required fields', variant: 'destructive' });
+        setIsLoading(false);
         return;
       }
 
-      const { error } = await signUp(email, password, fullName, role);
-      
-      if (error) {
-        console.error('Sign up error:', error);
-        toast({
-          title: "Sign up failed",
-          description: error.message || "An error occurred during sign up",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Account created!",
-          description: "Please check your email to confirm your account.",
-        });
+      // 1. Create user in Supabase Auth
+      const { error: signUpError } = await signUp(email, password, fullName, role);
+      if (signUpError) {
+        setSignUpError(signUpError.message || 'An error occurred during sign up');
+        toast({ title: 'Sign up failed', description: signUpError.message || 'An error occurred during sign up', variant: 'destructive' });
+        setIsLoading(false);
+        return;
       }
+
+      // 2. Get the new user's UUID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) {
+        setSignUpError('Account created, but could not determine user ID for role assignment.');
+        toast({ title: 'Role assignment failed', description: 'Could not determine user ID.', variant: 'destructive' });
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Insert into user_roles
+      const { error: roleError } = await supabase.from('user_roles').insert([{ user_id: userId, role: role as 'candidate' | 'recruiter' }]);
+      if (roleError) {
+        setSignUpError('Account created, but failed to assign role. Please contact support.');
+        toast({ title: 'Role assignment failed', description: roleError.message, variant: 'destructive' });
+        setIsLoading(false);
+        return;
+      }
+
+      // 4. Insert into candidates or recruiter_profiles
+      if (role === 'candidate') {
+        const { error: candidateError } = await supabase.from('candidates').insert([{
+          user_id: userId,
+          email: email,
+          first_name: fullName.split(' ')[0],
+          last_name: fullName.split(' ').slice(1).join(' '),
+        }]);
+        if (candidateError) {
+          setSignUpError('Account created, but failed to create candidate profile. Please contact support.');
+          toast({ title: 'Candidate profile creation failed', description: candidateError.message, variant: 'destructive' });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      toast({ title: 'Account created!', description: 'Please check your email to confirm your account.' });
     } catch (err) {
       console.error('Sign up catch error:', err);
-      toast({
-        title: "Sign up failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+      setSignUpError('An unexpected error occurred');
+      toast({ title: 'Sign up failed', description: 'An unexpected error occurred', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +202,7 @@ const Auth = () => {
                       />
                     </div>
                   </div>
+                  {signInError && <div className="text-red-500 text-sm mt-1">{signInError}</div>}
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
@@ -258,6 +288,7 @@ const Auth = () => {
                       </div>
                     </RadioGroup>
                   </div>
+                  {signUpError && <div className="text-red-500 text-sm mt-1">{signUpError}</div>}
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"

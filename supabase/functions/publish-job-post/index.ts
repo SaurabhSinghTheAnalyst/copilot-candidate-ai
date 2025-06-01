@@ -1,10 +1,15 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_ANON_KEY')!
+);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,7 +34,18 @@ serve(async (req) => {
     // Simulate posting to Hiring Copilot (always successful if selected)
     if (publishingOptions.hiringCopilot) {
       console.log('Publishing to Hiring Copilot...');
-      // In a real implementation, you would save to your database here
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert([{
+          ...jobData,
+          posted_at: new Date().toISOString()
+        }]);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       publishingResults.hiringCopilot = true;
     }
 

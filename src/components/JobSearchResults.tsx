@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Filter, SortDesc, Bookmark, ExternalLink, MapPin, DollarSign, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -232,7 +231,7 @@ const JobSearchResults = ({ query }: JobSearchResultsProps) => {
                 </div>
 
                 <div className="flex items-center space-x-3 pt-2">
-                  <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
                     Apply Now
                   </Button>
                   <Button variant="outline">

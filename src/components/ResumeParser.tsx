@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ParsedResumeData {
   personalInfo: {
@@ -41,6 +40,7 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -70,28 +70,27 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
         });
       }, 200);
 
-      // Convert file to base64
-      const fileBuffer = await file.arrayBuffer();
-      const base64File = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+      // Prepare FormData for backend
+      const formData = new FormData();
+      formData.append('user_id', user?.id || ''); // Use real UUID from Supabase Auth
+      formData.append('resume', file);
 
-      // Call the resume parsing edge function
-      const { data, error } = await supabase.functions.invoke('parse-resume', {
-        body: {
-          fileContent: base64File,
-          fileName: file.name,
-          requirements: requirements || ''
-        }
+      // Call the FastAPI backend
+      const response = await fetch('http://localhost:8000/parse-and-store-resume/', {
+        method: 'POST',
+        body: formData
       });
-
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      if (error) {
-        throw new Error(error.message);
+      if (!response.ok) {
+        throw new Error('Failed to parse resume');
       }
-
+      const result = await response.json();
+      const parsed = result.data;
       setUploadedFile(file.name);
-      onDataParsed(data);
+      console.log('ResumeParser parsed data:', parsed);
+      onDataParsed(parsed);
 
       toast({
         title: "Resume parsed successfully!",
@@ -169,7 +168,7 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
                 <Button 
                   size="sm"
                   onClick={resetAndUpload}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center space-x-2"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex items-center space-x-2"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Upload New</span>
@@ -190,7 +189,7 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
                 <Button 
                   asChild 
                   disabled={isUploading}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 >
                   <span className="cursor-pointer flex items-center space-x-2">
                     {isUploading ? (
@@ -219,3 +218,9 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
 };
 
 export default ResumeParser;
+
+
+
+
+
+

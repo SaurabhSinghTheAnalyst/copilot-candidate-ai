@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { User, FileText, Briefcase, Settings, Edit, Calendar, MapPin, Mail, Phone, Plus, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -233,7 +232,9 @@ const CandidateDashboard = () => {
                       <div className="text-sm text-gray-600">{job.company || 'Company'}</div>
                       {job.responsibilities && (
                         <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                          {job.responsibilities.substring(0, 100)}...
+                          {Array.isArray(job.responsibilities)
+                            ? (job.responsibilities[0]?.substring(0, 100) || '')
+                            : (job.responsibilities || '').substring(0, 100)}...
                         </div>
                       )}
                     </div>

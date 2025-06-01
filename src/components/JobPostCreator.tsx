@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, X, CheckCircle, Wand2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface JobData {
   title: string;
@@ -18,6 +18,7 @@ interface JobData {
   type: string;
   description: string;
   requirements: string;
+  salary: string;
 }
 
 interface PublishingOptions {
@@ -35,7 +36,8 @@ const JobPostCreator = () => {
     location: '',
     type: '',
     description: '',
-    requirements: ''
+    requirements: '',
+    salary: ''
   });
   const [textPrompt, setTextPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -50,6 +52,8 @@ const JobPostCreator = () => {
     indeed: false,
     createLinkedinPost: false
   });
+  const [isGeneratingLinkedin, setIsGeneratingLinkedin] = useState(false);
+  const { user } = useAuth();
 
   const handleInputChange = (field: keyof JobData, value: string) => {
     setJobData(prev => ({ ...prev, [field]: value }));
@@ -64,17 +68,26 @@ const JobPostCreator = () => {
       });
       return;
     }
-
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-job-description', {
-        body: { prompt: textPrompt }
+      // Call FastAPI backend for LLM-based JD generation
+      const response = await fetch('http://localhost:8000/generate-job-description/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: textPrompt })
       });
-
-      if (error) throw error;
-
-      if (data?.jobData) {
-        setJobData(data.jobData);
+      const data = await response.json();
+      if (data && data.jobData) {
+        setJobData(prev => ({
+          ...prev,
+          title: data.jobData.title || prev.title,
+          company: data.jobData.company || prev.company,
+          location: data.jobData.location || prev.location,
+          type: data.jobData.type || prev.type,
+          description: data.jobData.description || prev.description,
+          requirements: data.jobData.requirements || prev.requirements,
+          salary: data.jobData.salary || prev.salary
+        }));
         toast({
           title: "Job description generated!",
           description: "Your job posting has been created from your description",
@@ -101,14 +114,17 @@ const JobPostCreator = () => {
       });
       return;
     }
-
+    console.log('Setting isGeneratingLinkedin to true');
+    setIsGeneratingLinkedin(true);
+    setGeneratedLinkedinPost(''); // Clear the textarea while generating
     try {
-      const { data, error } = await supabase.functions.invoke('generate-linkedin-post', {
-        body: { jobData }
+      console.log('Making API call to generate LinkedIn post');
+      const response = await fetch('http://localhost:8000/generate-linkedin-post/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobData })
       });
-
-      if (error) throw error;
-
+      const data = await response.json();
       if (data?.linkedinPost) {
         setGeneratedLinkedinPost(data.linkedinPost);
         toast({
@@ -123,6 +139,9 @@ const JobPostCreator = () => {
         description: "Failed to generate LinkedIn post. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      console.log('Setting isGeneratingLinkedin to false');
+      setIsGeneratingLinkedin(false);
     }
   };
 
@@ -135,21 +154,13 @@ const JobPostCreator = () => {
       });
       return;
     }
-
     setIsPublishing(true);
-    
     try {
-      // Call the job posting function
-      const { data, error } = await supabase.functions.invoke('publish-job-post', {
-        body: { 
-          jobData, 
-          publishingOptions,
-          linkedinPost: publishingOptions.createLinkedinPost ? generatedLinkedinPost : null
-        }
-      });
-
+      if (!user) throw new Error('User not authenticated');
+      const { data, error } = await (supabase as any)
+        .from('jobs')
+        .insert([{ ...jobData, recruiter_id: user.id, posted_at: new Date().toISOString() }]);
       if (error) throw error;
-
       setShowSuccessModal(true);
       toast({
         title: "Job published successfully!",
@@ -284,10 +295,32 @@ const JobPostCreator = () => {
             <Label htmlFor="requirements">Job Requirements</Label>
             <Textarea
               id="requirements"
-              placeholder="List the required skills, experience, and qualifications..."
-              value={jobData.requirements}
-              onChange={(e) => handleInputChange('requirements', e.target.value)}
+              placeholder={`• 2-4 years of data analysis experience\n• Proficient in SQL and Excel\n• Experience with Power BI or Tableau\n• Basic knowledge of Python or R\n• Excellent communication skills`}
+              value={jobData.requirements
+                .split(';')
+                .map(req => req.trim())
+                .filter(Boolean)
+                .join('\n')}
+              onChange={e => {
+                // Convert newlines to semicolon-separated string for storage
+                const value = e.target.value
+                  .split('\n')
+                  .map(line => line.replace(/^•\s*/, '').trim())
+                  .filter(Boolean)
+                  .join('; ');
+                handleInputChange('requirements', value);
+              }}
               rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="salary">Salary</Label>
+            <Input
+              id="salary"
+              placeholder="e.g., $100k - $120k, Negotiable"
+              value={jobData.salary}
+              onChange={e => handleInputChange('salary', e.target.value)}
             />
           </div>
         
@@ -370,15 +403,24 @@ const JobPostCreator = () => {
               
               {publishingOptions.createLinkedinPost && (
                 <div className="ml-6 space-y-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={generateLinkedInPost}
                     className="flex items-center space-x-2"
+                    disabled={isGeneratingLinkedin}
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Generate LinkedIn Post</span>
+                    {isGeneratingLinkedin ? (
+                      <div className="flex items-center justify-center w-full">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span className="ml-2 text-white">Generating...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Generate LinkedIn Post</span>
+                      </>
+                    )}
                   </Button>
-                  
                   {generatedLinkedinPost && (
                     <div className="space-y-2">
                       <Label>Generated LinkedIn Post</Label>
@@ -412,11 +454,11 @@ const JobPostCreator = () => {
       {/* Success Modal */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <Card className="max-w-md p-6">
+          <Card className="max-w-md p-6" role="dialog" aria-labelledby="success-title" aria-describedby="success-description">
             <div className="flex flex-col items-center space-y-4">
               <CheckCircle className="w-12 h-12 text-green-500" />
-              <h3 className="text-2xl font-semibold text-gray-900">Job Published!</h3>
-              <p className="text-gray-600 text-center">
+              <h3 id="success-title" className="text-2xl font-semibold text-gray-900">Job Published!</h3>
+              <p id="success-description" className="text-gray-600 text-center">
                 Your job posting for <strong>{jobData.title}</strong> at <strong>{jobData.company}</strong> has been successfully published across your selected platforms.
               </p>
               <Button onClick={() => setShowSuccessModal(false)}>Close</Button>

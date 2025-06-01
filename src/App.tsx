@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +10,8 @@ import Index from "./pages/Index";
 import Candidate from "./pages/Candidate";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import JobApplicants from './pages/JobApplicants';
+import CandidateProfile from './pages/CandidateProfile';
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,8 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route path="/jobs/:jobId/applicants" element={<JobApplicants />} />
+            <Route path="/candidates/:candidateId" element={<CandidateProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
