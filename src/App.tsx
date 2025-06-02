@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import JobApplicants from './pages/JobApplicants';
 import CandidateProfile from './pages/CandidateProfile';
+import RootRedirect from './pages/RootRedirect';
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,7 @@ const App: React.FC = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
-              path="/" 
+              path="/dashboard" 
               element={
                 <ProtectedRoute requiredRole="recruiter">
                   <Index />
@@ -42,7 +43,7 @@ const App: React.FC = () => (
             />
             <Route path="/jobs/:jobId/applicants" element={<JobApplicants />} />
             <Route path="/candidates/:candidateId" element={<CandidateProfile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/" element={<RootRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -73,7 +73,7 @@ const JobBoard: React.FC = () => {
       .map(app => app.candidates)
       .filter(Boolean); // Remove null/undefined
 
-    const res = await fetch('http://192.168.20.19:8000/api/score-candidates', {
+    const res = await fetch('http://localhost:8000/api/score-candidates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -83,7 +83,14 @@ const JobBoard: React.FC = () => {
     });
     const scores = await res.json();
     const scoreMap = {};
-    scores.forEach(s => { scoreMap[s.candidate_id] = s.score; });
+    scores.forEach(s => { 
+      scoreMap[s.candidate_id] = s.score;
+      // Store score in localStorage
+      localStorage.setItem(`candidate_score_${s.candidate_id}`, JSON.stringify({
+        score: s.score,
+        reason: s.reason
+      }));
+    });
     setCandidateScores(scoreMap);
     setScoring(false);
   };
@@ -199,8 +206,8 @@ const JobBoard: React.FC = () => {
             ) : (
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {applicants.map((app) => {
-                  const scoreString = candidateScores[app.candidates?.id];
-                  const { score, reason } = parseScoreAndReason(scoreString);
+                  const score = app.llm_score;
+                  const reason = app.llm_evaluation;
                   return (
                     <div key={app.id} className="border rounded-lg p-4 relative cursor-pointer" onClick={() => { setSelectedApplicant({ ...app, score, reason }); setShowApplicantModal(true); }}>
                       {/* Score in top right */}

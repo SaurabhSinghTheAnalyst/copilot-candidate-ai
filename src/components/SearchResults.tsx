@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Filter, SortDesc, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,96 +11,67 @@ interface SearchResultsProps {
   query: string;
 }
 
-interface Candidate {
+interface CandidateMatch {
   id: string;
-  name: string | null;
-  title: string | null;
-  location: string | null;
+  first_name: string;
+  last_name: string;
   email: string;
-  phone: string | null;
-  score: number;
-  skills: string[];
-  experience: string | null;
-  availability: string | null;
-  workPreference: 'Remote' | 'Hybrid' | 'On-site';
-  summary: string;
-  match_reasons: string[];
+  professional_summary?: string;
+  skills?: string[];
+  match_score: number;
+  reason: string;
 }
 
 const SearchResults = ({ query }: SearchResultsProps) => {
   const [sortBy, setSortBy] = useState('score');
   const [filterBy, setFilterBy] = useState('all');
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [matches, setMatches] = useState<CandidateMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (query) {
-      searchCandidatesWithAI();
+      aiCandidateSearch(query);
     }
   }, [query]);
 
-  const searchCandidatesWithAI = async () => {
+  const aiCandidateSearch = async (prompt: string) => {
+    setLoading(true);
+    setMatches([]);
     try {
-      setLoading(true);
-      
-      const { data, error } = await supabase.functions.invoke('ai-search', {
-        body: { query }
+      const response = await fetch('http://localhost:8000/api/ai-candidate-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
       });
-
-      if (error) {
-        toast({
-          title: "Search error",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Transform the data to match the expected format
-      const transformedCandidates: Candidate[] = (data.candidates || []).map((candidate) => ({
-        id: candidate.id,
-        name: candidate.name || 'Unknown',
-        title: candidate.title || 'No title',
-        location: candidate.location || 'No location',
-        email: candidate.email,
-        phone: candidate.phone || 'No phone',
-        score: candidate.score || 0,
-        skills: candidate.skills || [],
-        experience: candidate.experience || 'Not specified',
-        availability: candidate.availability || 'Available',
-        workPreference: candidate.workPreference || 'Remote',
-        summary: candidate.resume || 'No summary available',
-        match_reasons: candidate.match_reasons || ['Profile matches search criteria']
-      }));
-
-      setCandidates(transformedCandidates);
-      
+      if (!response.ok) throw new Error('AI search failed');
+      const data = await response.json();
+      setMatches(data.matches || []);
       toast({
-        title: "AI Search Complete",
-        description: `Found ${transformedCandidates.length} matching candidates`,
+        title: 'AI Search Complete',
+        description: `Found ${data.matches?.length || 0} candidates`,
       });
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('AI search error:', error);
       toast({
-        title: "Error",
-        description: "Failed to search candidates",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to search candidates',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredCandidates = candidates.filter(candidate => {
-    if (filterBy === 'available') return candidate.availability === 'Available';
-    if (filterBy === 'remote') return candidate.workPreference === 'Remote';
+  // Filtering and sorting
+  const filteredMatches = matches.filter(match => {
+    if (filterBy === 'available') return match.professional_summary?.toLowerCase().includes('available');
+    if (filterBy === 'remote') return match.professional_summary?.toLowerCase().includes('remote');
     return true;
   });
-
-  const sortedCandidates = [...filteredCandidates].sort((a, b) => {
-    if (sortBy === 'score') return b.score - a.score;
-    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+  const sortedMatches = [...filteredMatches].sort((a, b) => {
+    if (sortBy === 'score') return (b.match_score || 0) - (a.match_score || 0);
+    if (sortBy === 'name') return (a.first_name || '').localeCompare(b.first_name || '');
     return 0;
   });
 
@@ -110,7 +80,7 @@ const SearchResults = ({ query }: SearchResultsProps) => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">AI is analyzing candidates...</p>
+          <p className="text-gray-600">Searching candidates...</p>
         </div>
       </div>
     );
@@ -121,9 +91,9 @@ const SearchResults = ({ query }: SearchResultsProps) => {
       {/* Results Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">AI Search Results</h3>
+          <h3 className="text-2xl font-bold text-gray-900">AI Candidate Search Results</h3>
           <p className="text-gray-600">
-            Found {sortedCandidates.length} candidates matching "{query}" using AI analysis
+            Found {sortedMatches.length} candidates matching "{query}"
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -138,7 +108,6 @@ const SearchResults = ({ query }: SearchResultsProps) => {
               <SelectItem value="remote">Remote Only</SelectItem>
             </SelectContent>
           </Select>
-          
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-40">
               <SortDesc className="w-4 h-4 mr-2" />
@@ -149,40 +118,41 @@ const SearchResults = ({ query }: SearchResultsProps) => {
               <SelectItem value="name">Name</SelectItem>
             </SelectContent>
           </Select>
-
           <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
         </div>
       </div>
-
-      {/* Results Summary */}
-      <div className="flex items-center space-x-4">
-        <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-          {sortedCandidates.filter(c => c.score >= 90).length} Excellent matches (90%+)
-        </Badge>
-        <Badge variant="secondary" className="bg-green-50 text-green-700">
-          {sortedCandidates.filter(c => c.availability === 'Available').length} Available now
-        </Badge>
-        <Badge variant="secondary" className="bg-purple-50 text-purple-700">
-          {sortedCandidates.filter(c => c.workPreference === 'Remote').length} Remote workers
-        </Badge>
-        <Badge variant="secondary" className="bg-orange-50 text-orange-700">
-          🤖 AI-Powered Search
-        </Badge>
-      </div>
-
       {/* Candidate Cards */}
       <div className="space-y-4">
-        {sortedCandidates.length === 0 ? (
+        {sortedMatches.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No candidates found matching your criteria.</p>
             <p className="text-sm text-gray-400 mt-2">Try adjusting your search terms or filters.</p>
           </div>
         ) : (
-          sortedCandidates.map((candidate) => (
-            <CandidateCard key={candidate.id} candidate={candidate} />
+          sortedMatches.map((match) => (
+            <div key={match.id} className="border rounded-lg p-4 bg-white/90 shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-semibold text-lg">
+                  {match.first_name} {match.last_name}
+                </div>
+                <div className="bg-blue-600 text-white rounded-full px-3 py-1 text-sm font-bold shadow">
+                  {match.match_score}%
+                </div>
+              </div>
+              <div className="text-gray-600 text-sm mb-1">{match.email}</div>
+              <div className="text-gray-700 mb-2">Skills: {match.skills?.join(', ') || 'N/A'}</div>
+              {match.professional_summary && (
+                <div className="bg-blue-50 rounded-lg p-3 text-blue-900 text-sm mt-2">
+                  <b>Summary:</b> {match.professional_summary}
+                </div>
+              )}
+              <div className="bg-blue-100 rounded p-2 text-blue-800 text-xs mt-2">
+                <b>Why this candidate?</b> {match.reason}
+              </div>
+            </div>
           ))
         )}
       </div>

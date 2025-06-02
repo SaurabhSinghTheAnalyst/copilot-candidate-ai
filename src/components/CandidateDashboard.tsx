@@ -7,10 +7,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EditProfile from './EditProfile';
 import ProfileCompletenessCard from './ProfileCompletenessCard';
 import { useCandidateProfile } from '@/hooks/useCandidateProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { profile, loading } = useCandidateProfile();
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const { toast } = useToast();
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [replyModal, setReplyModal] = useState<{ open: boolean, recruiterId: string, recruiterName: string, recruiterEmail: string } | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   if (loading) {
     return (
@@ -36,10 +47,64 @@ const CandidateDashboard = () => {
     profileViews: 45
   };
 
+  // Fetch messages for candidate, with recruiter info
+  React.useEffect(() => {
+    let lastMessageTime = null;
+    const fetchMessages = async () => {
+      if (!user?.id) return;
+      setMessagesLoading(true);
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*, recruiter:sender_id (full_name, email)')
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setMessages(data);
+        // Notification logic
+        if (data.length > 0) {
+          if (!lastMessageTime) lastMessageTime = data[0].created_at;
+          else if (data[0].created_at > lastMessageTime) {
+            setNewMessageCount((c) => c + 1);
+            toast({ title: 'New message received!', description: data[0].message });
+            lastMessageTime = data[0].created_at;
+          }
+        }
+      }
+      setMessagesLoading(false);
+    };
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const openReplyModal = (msg) => {
+    setReplyModal({
+      open: true,
+      recruiterId: msg.sender_id,
+      recruiterName: msg.recruiter?.full_name || msg.sender_id,
+      recruiterEmail: msg.recruiter?.email || '',
+    });
+    setReplyText('');
+  };
+
+  const handleSendReply = async () => {
+    if (!user?.id || !replyModal?.recruiterId) return;
+    await supabase.from('messages').insert([
+      {
+        sender_id: user.id,
+        receiver_id: replyModal.recruiterId,
+        message: replyText,
+      }
+    ]);
+    setReplyModal(null);
+    setReplyText('');
+    toast({ title: 'Reply sent!' });
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Overview</span>
@@ -47,6 +112,13 @@ const CandidateDashboard = () => {
           <TabsTrigger value="edit" className="flex items-center space-x-2">
             <Edit className="w-4 h-4" />
             <span>Edit Profile</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center space-x-2">
+            <Mail className="w-4 h-4" />
+            <span>Messages</span>
+            {newMessageCount > 0 && (
+              <span className="ml-2 bg-red-500 text-white rounded-full px-2 text-xs">{newMessageCount}</span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -295,6 +367,48 @@ const CandidateDashboard = () => {
 
         <TabsContent value="edit">
           <EditProfile />
+        </TabsContent>
+
+        <TabsContent value="messages" className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h2 className="text-xl font-bold mb-4">Messages from Recruiters</h2>
+            {messagesLoading ? (
+              <div>Loading messages...</div>
+            ) : messages.length === 0 ? (
+              <div className="text-gray-500">No messages yet.</div>
+            ) : (
+              <ul className="space-y-4">
+                {messages.map((msg) => (
+                  <li key={msg.id} className="border-b pb-4 last:border-b-0">
+                    <div className="text-gray-700 mb-1">{msg.message}</div>
+                    <div className="text-xs text-gray-500">Received: {new Date(msg.created_at).toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">From: {msg.recruiter?.full_name || msg.sender_id} {msg.recruiter?.email && (<span>({msg.recruiter.email})</span>)}</div>
+                    <Button size="sm" className="mt-2" onClick={() => openReplyModal(msg)}>Reply</Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* Reply Modal */}
+            {replyModal?.open && (
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg">
+                  <h2 className="text-xl font-bold mb-2">Reply to {replyModal.recruiterName}</h2>
+                  <div className="mb-2 text-xs text-gray-500">{replyModal.recruiterEmail}</div>
+                  <textarea
+                    className="w-full border rounded p-2 mb-4"
+                    rows={4}
+                    placeholder="Type your reply..."
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setReplyModal(null)} className="px-4 py-2 rounded bg-gray-200">Cancel</button>
+                    <button onClick={handleSendReply} className="px-4 py-2 rounded bg-blue-600 text-white">Send</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

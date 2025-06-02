@@ -53,7 +53,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       return <Navigate to="/candidate" replace />;
     }
     if (role === 'recruiter') {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/dashboard" replace />;
     }
     return <Navigate to="/auth" replace />;
   }
