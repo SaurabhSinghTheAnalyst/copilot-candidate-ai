@@ -10,6 +10,7 @@ import docx
 from score_candidates import router as score_candidates_router
 from fastapi.responses import JSONResponse
 import requests
+import re
 
 load_dotenv()
 
@@ -282,4 +283,47 @@ async def generate_linkedin_post(payload: dict):
         print("LLM LinkedIn Post Output:", linkedin_post)
         return {"linkedinPost": linkedin_post}
     except Exception as e:
-        return JSONResponse(status_code=400, content={"detail": f"Failed to generate LinkedIn post: {str(e)}"}) 
+        return JSONResponse(status_code=400, content={"detail": f"Failed to generate LinkedIn post: {str(e)}"})
+
+@app.post("/api/ai-candidate-search")
+async def ai_candidate_search(payload: dict = Body(...)):
+    prompt = payload.get("prompt", "")
+    if not prompt:
+        return JSONResponse(status_code=400, content={"detail": "Prompt is required"})
+    # Fetch all candidates
+    candidates_resp = supabase.table("candidates").select("*").execute()
+    candidates = candidates_resp.data if hasattr(candidates_resp, 'data') else candidates_resp.get('data', [])
+    if not candidates:
+        return {"matches": []}
+    # Prepare LLM prompt
+    llm_prompt = f"""
+You are an AI recruiter. Given the following job search prompt: \"{prompt}\", and the following candidate profiles:
+{json.dumps(candidates, indent=2)}
+
+Rank and return the best matching candidates as a JSON array. For each candidate, include:
+- id
+- first_name
+- last_name
+- email
+- professional_summary
+- skills
+- match_score (0-100)
+- reason (1-2 sentences why this candidate matches the prompt)
+Return only the JSON array, no extra text.
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": llm_prompt}],
+            max_tokens=2000,
+            temperature=0.3,
+        )
+        content = response.choices[0].message.content
+        print("AI Search LLM output:", content)
+        # Remove code block markers if present
+        content = re.sub(r"^```(?:json)?|```$", "", content.strip(), flags=re.MULTILINE).strip()
+        matches = json.loads(content)
+        return {"matches": matches}
+    except Exception as e:
+        print("AI candidate search error:", str(e))
+        return JSONResponse(status_code=500, content={"detail": f"AI search failed: {str(e)}"}) 
