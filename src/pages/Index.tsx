@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Search, Users, Briefcase, TrendingUp, Award, ChevronRight, Filter, MoreVertical, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -205,7 +204,10 @@ const Index = () => {
       </div>
 
       {showJobModal && (
-        <JobPostingModal onClose={() => setShowJobModal(false)} />
+        <JobPostingModal 
+          isOpen={showJobModal}
+          onClose={() => setShowJobModal(false)} 
+        />
       )}
     </div>
   );

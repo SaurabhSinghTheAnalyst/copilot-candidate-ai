@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Linkedin, Github, Star, MapPin, Calendar, Award, Briefcase, GraduationCap, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Linkedin, Github, Star, MapPin, Calendar, Award, Briefcase, GraduationCap, MessageCircle, ArrowLeft, Users } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/contexts/AuthContext';
 
