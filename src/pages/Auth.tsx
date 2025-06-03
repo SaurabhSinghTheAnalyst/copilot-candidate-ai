@@ -1,317 +1,275 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Zap, Mail, Lock, User, Users, Briefcase } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Briefcase, Users, ArrowRight, CheckCircle, Sparkles, Shield, Globe } from 'lucide-react';
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'candidate' | 'recruiter'>('candidate');
+  const [loading, setLoading] = useState(false);
+  const { signUp, signIn } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [signInError, setSignInError] = useState('');
-  const [signUpError, setSignUpError] = useState('');
+  const navigate = useNavigate();
 
-  // Redirect if already authenticated
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  const handleAuth = async (isSignUp: boolean) => {
+    if (!email || !password) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setSignInError('');
-    
+    setLoading(true);
     try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-
-      console.log('Sign in attempt for:', email);
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        console.error('Sign in error:', error);
-        setSignInError(error.message || 'An error occurred during sign in');
+      if (isSignUp) {
+        await signUp(email, password, role);
         toast({
-          title: "Sign in failed",
-          description: error.message || "An error occurred during sign in",
-          variant: "destructive"
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
         });
       } else {
-        toast({
-          title: "Welcome back!",
-          description: "You've been signed in successfully.",
-        });
+        await signIn(email, password);
+        navigate(role === 'recruiter' ? '/dashboard' : '/candidate');
       }
-    } catch (err) {
-      console.error('Sign in catch error:', err);
-      setSignInError('An unexpected error occurred');
+    } catch (error: any) {
       toast({
-        title: "Sign in failed",
-        description: "An unexpected error occurred",
+        title: "Authentication failed",
+        description: error.message,
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setSignUpError('');
-    try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-      const fullName = formData.get('fullName') as string;
-      const role = formData.get('role') as string;
-
-      console.log('Sign up attempt:', { email, fullName, role });
-      if (!email || !password || !fullName || !role) {
-        setSignUpError('Please fill in all required fields');
-        toast({ title: 'Sign up failed', description: 'Please fill in all required fields', variant: 'destructive' });
-        setIsLoading(false);
-        return;
-      }
-
-      // 1. Create user in Supabase Auth
-      const { error: signUpError } = await signUp(email, password, fullName, role);
-      if (signUpError) {
-        setSignUpError(signUpError.message || 'An error occurred during sign up');
-        toast({ title: 'Sign up failed', description: signUpError.message || 'An error occurred during sign up', variant: 'destructive' });
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Get the new user's UUID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-      if (!userId) {
-        setSignUpError('Account created, but could not determine user ID for role assignment.');
-        toast({ title: 'Role assignment failed', description: 'Could not determine user ID.', variant: 'destructive' });
-        setIsLoading(false);
-        return;
-      }
-
-      // 3. Insert into user_roles
-      const { error: roleError } = await supabase.from('user_roles').insert([{ user_id: userId, role: role as 'candidate' | 'recruiter' }]);
-      if (roleError) {
-        setSignUpError('Account created, but failed to assign role. Please contact support.');
-        toast({ title: 'Role assignment failed', description: roleError.message, variant: 'destructive' });
-        setIsLoading(false);
-        return;
-      }
-
-      // 4. Insert into candidates or recruiter_profiles
-      if (role === 'candidate') {
-        const { error: candidateError } = await supabase.from('candidates').insert([{
-          user_id: userId,
-          email: email,
-          first_name: fullName.split(' ')[0],
-          last_name: fullName.split(' ').slice(1).join(' '),
-        }]);
-        if (candidateError) {
-          setSignUpError('Account created, but failed to create candidate profile. Please contact support.');
-          toast({ title: 'Candidate profile creation failed', description: candidateError.message, variant: 'destructive' });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      toast({ title: 'Account created!', description: 'Please check your email to confirm your account.' });
-    } catch (err) {
-      console.error('Sign up catch error:', err);
-      setSignUpError('An unexpected error occurred');
-      toast({ title: 'Sign up failed', description: 'An unexpected error occurred', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const features = [
+    { icon: Briefcase, title: "Smart Job Matching", desc: "AI-powered job recommendations" },
+    { icon: Users, title: "Global Talent Pool", desc: "Access to 50,000+ professionals" },
+    { icon: Shield, title: "Secure Platform", desc: "Enterprise-grade security" },
+    { icon: Globe, title: "Remote-First", desc: "Connect from anywhere" }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Zap className="w-7 h-7 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10 grid min-h-screen lg:grid-cols-2">
+        {/* Left Side - Branding */}
+        <div className="hidden lg:flex flex-col justify-center px-12 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <Briefcase className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">TalentHub</h1>
+                <p className="text-blue-100">Professional Career Platform</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Hiring Copilot</h1>
-              <p className="text-sm text-gray-500">AI-Powered Recruitment</p>
+
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-4xl font-bold leading-tight mb-4">
+                  Connect Talent with
+                  <span className="block bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">Opportunity</span>
+                </h2>
+                <p className="text-xl text-blue-100 leading-relaxed">
+                  Join thousands of professionals and companies building the future of work together.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                {features.map((feature, idx) => (
+                  <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <feature.icon className="w-8 h-8 text-blue-200 mb-3" />
+                    <h3 className="font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-sm text-blue-100">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center space-x-4 pt-8">
+                <div className="flex -space-x-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-2 border-white flex items-center justify-center text-sm font-bold">
+                      {String.fromCharCode(64 + i)}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="font-semibold">50,000+ Active Users</p>
+                  <p className="text-sm text-blue-100">Join our growing community</p>
+                </div>
+              </div>
             </div>
           </div>
-          <p className="text-gray-600">Sign in to your account or create a new one</p>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-center text-gray-900">Get Started</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+        {/* Right Side - Auth Form */}
+        <div className="flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md space-y-8">
+            {/* Mobile Header */}
+            <div className="lg:hidden text-center">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Briefcase className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-gray-900">TalentHub</span>
+              </div>
+              <p className="text-gray-600">Connect with your next opportunity</p>
+            </div>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl">
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
+                  Welcome Back
+                </CardTitle>
+                <p className="text-gray-600">Choose your path to get started</p>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                {/* Role Selection */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-700">I am a:</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setRole('candidate')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        role === 'candidate'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <Users className="w-6 h-6 mx-auto mb-2" />
+                      <div className="text-sm font-medium">Job Seeker</div>
+                    </button>
+                    <button
+                      onClick={() => setRole('recruiter')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        role === 'recruiter'
+                          ? 'border-purple-500 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <Briefcase className="w-6 h-6 mx-auto mb-2" />
+                      <div className="text-sm font-medium">Recruiter</div>
+                    </button>
+                  </div>
+                </div>
+
+                <Tabs defaultValue="signin" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-100/80">
+                    <TabsTrigger value="signin" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      Sign In
+                    </TabsTrigger>
+                    <TabsTrigger value="signup" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      Sign Up
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="signin" className="space-y-4 mt-6">
+                    <div className="space-y-4">
                       <Input
-                        id="signin-email"
-                        name="email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10"
-                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-12 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                       />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
-                        id="signin-password"
-                        name="password"
                         type="password"
                         placeholder="Enter your password"
-                        className="pl-10"
-                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
-                  </div>
-                  {signInError && <div className="text-red-500 text-sm mt-1">{signInError}</div>}
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Signing In...</span>
-                      </div>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
+                    <Button
+                      onClick={() => handleAuth(false)}
+                      disabled={loading}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                    >
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Signing in...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span>Sign In</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                      )}
+                    </Button>
+                  </TabsContent>
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <TabsContent value="signup" className="space-y-4 mt-6">
+                    <div className="space-y-4">
                       <Input
-                        id="signup-name"
-                        name="fullName"
-                        type="text"
-                        placeholder="Enter your full name"
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="signup-email"
-                        name="email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10"
-                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-12 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                       />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
-                        id="signup-password"
-                        name="password"
                         type="password"
                         placeholder="Create a password"
-                        className="pl-10"
-                        required
-                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label>I am signing up as:</Label>
-                    <RadioGroup defaultValue="candidate" name="role" className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="candidate" id="candidate" />
+                    <Button
+                      onClick={() => handleAuth(true)}
+                      disabled={loading}
+                      className="w-full h-12 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                    >
+                      {loading ? (
                         <div className="flex items-center space-x-2">
-                          <User className="w-4 h-4 text-gray-500" />
-                          <Label htmlFor="candidate" className="font-normal cursor-pointer">
-                            Candidate - Looking for opportunities
-                          </Label>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Creating account...</span>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="recruiter" id="recruiter" />
+                      ) : (
                         <div className="flex items-center space-x-2">
-                          <Briefcase className="w-4 h-4 text-gray-500" />
-                          <Label htmlFor="recruiter" className="font-normal cursor-pointer">
-                            Recruiter - Looking for talent
-                          </Label>
+                          <span>Create Account</span>
+                          <Sparkles className="w-4 h-4" />
                         </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  {signUpError && <div className="text-red-500 text-sm mt-1">{signUpError}</div>}
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Creating Account...</span>
-                      </div>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                      )}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
-          By signing up, you agree to our Terms of Service and Privacy Policy
-        </p>
+                <div className="text-center">
+                  <Badge variant="secondary" className="bg-green-100/80 text-green-700 border-green-200">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Free to join
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <p className="text-center text-sm text-gray-500">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
