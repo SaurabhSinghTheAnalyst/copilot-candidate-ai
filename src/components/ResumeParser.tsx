@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_CONFIG } from '@/config/api';
 
 interface ParsedResumeData {
   personalInfo: {
@@ -42,8 +43,6 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const API_BASE_URL = import.meta.env.VITE_API_KEY;
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -78,7 +77,7 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
       formData.append('resume', file);
 
       // Call the FastAPI backend
-      const response = await fetch(`${API_BASE_URL}/parse-and-store-resume/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/parse-and-store-resume/`, {
         method: 'POST',
         body: formData
       });
@@ -220,9 +219,3 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
 };
 
 export default ResumeParser;
-
-
-
-
-
-

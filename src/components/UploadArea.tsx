@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_CONFIG } from '@/config/api';
 
 interface WorkExperience {
   company: string;
@@ -45,8 +46,6 @@ interface CandidateInfo {
   requiresVisa: boolean;
   visaExpiry?: string;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_KEY;
 
 const UploadArea = () => {
   const [candidateInfo, setCandidateInfo] = useState<CandidateInfo>({
@@ -182,7 +181,7 @@ const UploadArea = () => {
     if (!parsedData) return;
     setIsGeneratingSummary(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-summary/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/generate-summary/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedData)
@@ -262,7 +261,7 @@ const UploadArea = () => {
         visa_expiry: candidateInfo.visaExpiry,
         // Add more fields as needed
       };
-      const response = await fetch(`${API_BASE_URL}/save-candidate/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/save-candidate/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
