@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CandidateCard from './CandidateCard';
+import { API_CONFIG } from '@/config/api';
 
 interface SearchResultsProps {
   query: string;
@@ -41,7 +42,7 @@ const SearchResults = ({ query }: SearchResultsProps) => {
     setLoading(true);
     setMatches([]);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/ai-candidate-search`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/ai-candidate-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),

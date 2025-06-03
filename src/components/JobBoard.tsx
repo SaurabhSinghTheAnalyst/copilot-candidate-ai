@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import JobPostingModal from './JobPostingModal';
 import { useNavigate } from 'react-router-dom';
+import { API_CONFIG } from '@/config/api';
 
 interface Job {
   id: string;
@@ -75,7 +76,7 @@ const JobBoard: React.FC = () => {
       .map(app => app.candidates)
       .filter(Boolean); // Remove null/undefined
 
-    const res = await fetch(`${API_BASE_URL}/api/score-candidates`, {
+    const res = await fetch(`${API_CONFIG.BASE_URL}/api/score-candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -271,4 +272,4 @@ const JobBoard: React.FC = () => {
   );
 };
 
-export default JobBoard; 
+export default JobBoard;

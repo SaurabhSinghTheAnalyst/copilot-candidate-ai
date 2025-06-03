@@ -9,26 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      candidate_profiles: {
+      applications: {
         Row: {
+          candidate_id: string | null
+          cover_letter: string | null
           created_at: string | null
-          email: string
-          full_name: string
           id: string
+          job_id: string | null
+          llm_evaluation: string | null
+          llm_score: number | null
         }
         Insert: {
+          candidate_id?: string | null
+          cover_letter?: string | null
           created_at?: string | null
-          email: string
-          full_name: string
           id?: string
+          job_id?: string | null
+          llm_evaluation?: string | null
+          llm_score?: number | null
         }
         Update: {
+          candidate_id?: string | null
+          cover_letter?: string | null
           created_at?: string | null
-          email?: string
-          full_name?: string
           id?: string
+          job_id?: string | null
+          llm_evaluation?: string | null
+          llm_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "applications_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       candidates: {
         Row: {
@@ -43,16 +67,19 @@ export type Database = {
           first_name: string | null
           github_url: string | null
           id: string
+          interested_in: string | null
           job_experience: Json | null
           last_name: string | null
           last_updated: string | null
           linkedin_url: string | null
           phone: string | null
           professional_summary: string | null
+          requires_visa: boolean | null
           resume_file_name: string | null
           skills: string[] | null
           state: string | null
           user_id: string
+          visa_expiry: string | null
           years_of_experience: string | null
           zip_code: string | null
         }
@@ -68,16 +95,19 @@ export type Database = {
           first_name?: string | null
           github_url?: string | null
           id?: string
+          interested_in?: string | null
           job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
           linkedin_url?: string | null
           phone?: string | null
           professional_summary?: string | null
+          requires_visa?: boolean | null
           resume_file_name?: string | null
           skills?: string[] | null
           state?: string | null
           user_id: string
+          visa_expiry?: string | null
           years_of_experience?: string | null
           zip_code?: string | null
         }
@@ -93,18 +123,95 @@ export type Database = {
           first_name?: string | null
           github_url?: string | null
           id?: string
+          interested_in?: string | null
           job_experience?: Json | null
           last_name?: string | null
           last_updated?: string | null
           linkedin_url?: string | null
           phone?: string | null
           professional_summary?: string | null
+          requires_visa?: boolean | null
           resume_file_name?: string | null
           skills?: string[] | null
           state?: string | null
           user_id?: string
+          visa_expiry?: string | null
           years_of_experience?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          company: string
+          created_at: string | null
+          description: string | null
+          id: string
+          location: string | null
+          recruiter_id: string | null
+          requirements: string | null
+          salary: string | null
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          recruiter_id?: string | null
+          requirements?: string | null
+          salary?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          recruiter_id?: string | null
+          requirements?: string | null
+          salary?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiter_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          receiver_id: string | null
+          sender_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          receiver_id?: string | null
+          sender_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          receiver_id?: string | null
+          sender_id?: string | null
         }
         Relationships: []
       }
@@ -150,30 +257,6 @@ export type Database = {
         }
         Relationships: []
       }
-      messages: {
-        Row: {
-          id: string;
-          sender_id: string;
-          receiver_id: string;
-          message: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          sender_id: string;
-          receiver_id: string;
-          message: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          sender_id?: string;
-          receiver_id?: string;
-          message?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      },
     }
     Views: {
       [_ in never]: never
