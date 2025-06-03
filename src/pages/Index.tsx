@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Plus, Search, Users, Briefcase, TrendingUp, Award, ChevronRight, Filter, MoreVertical, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import JobPostingModal from '@/components/JobPostingModal';
 import DashboardStats from '@/components/DashboardStats';
 import CandidateCarousel from '@/components/CandidateCarousel';
+import JobBoard from '@/components/JobBoard';
 
 const Index = () => {
   const [showJobModal, setShowJobModal] = useState(false);
@@ -112,13 +114,13 @@ const Index = () => {
               <TrendingUp className="w-4 h-4" />
               <span>Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="candidates" className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
-              <Users className="w-4 h-4" />
-              <span>Candidates</span>
+            <TabsTrigger value="jobs" className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+              <Briefcase className="w-4 h-4" />
+              <span>Post a Job</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
               <Award className="w-4 h-4" />
-              <span>Analytics</span>
+              <span>Dashboard</span>
             </TabsTrigger>
           </TabsList>
 
@@ -143,6 +145,9 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Featured Candidates Carousel */}
+            <CandidateCarousel />
 
             {/* Recent Activity */}
             <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg">
@@ -185,20 +190,14 @@ const Index = () => {
                 ))}
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="jobs">
+            <JobBoard />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
             <DashboardStats />
-          </TabsContent>
-
-          <TabsContent value="candidates">
-            <CandidateCarousel />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <div className="text-center py-12">
-              <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Analytics Coming Soon</h3>
-              <p className="text-gray-500">Advanced analytics and insights will be available here.</p>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
