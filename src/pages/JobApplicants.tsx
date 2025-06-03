@@ -6,8 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_KEY;
+import { API_CONFIG } from '@/config/api';
 
 const JobApplicants: React.FC = () => {
   const { jobId } = useParams();
@@ -63,7 +62,7 @@ const JobApplicants: React.FC = () => {
       candidate_id: app.candidate_id,
       application_id: app.id
     })).filter(Boolean);
-    const res = await fetch(`${API_BASE_URL}/api/score-candidates`, {
+    const res = await fetch(`${API_CONFIG.BASE_URL}/api/score-candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -96,7 +95,7 @@ const JobApplicants: React.FC = () => {
     setAiLoading(true);
     // Fetch AI summary and Q&A from backend
     try {
-      const res = await fetch(`${API_BASE_URL}/api/candidate-background-check`, {
+      const res = await fetch(`${API_CONFIG.BASE_URL}/api/candidate-background-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidate }),
@@ -241,4 +240,4 @@ const JobApplicants: React.FC = () => {
   );
 };
 
-export default JobApplicants; 
+export default JobApplicants;
