@@ -34,6 +34,8 @@ interface JobPostingModalProps {
   onClose: () => void;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const JobPostingModal = ({ isOpen, onClose }: JobPostingModalProps) => {
   const [step, setStep] = useState<'platforms' | 'details' | 'success'>('platforms');
   const [jobData, setJobData] = useState<JobData>({
@@ -75,7 +77,7 @@ const JobPostingModal = ({ isOpen, onClose }: JobPostingModalProps) => {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('http://localhost:8000/generate-job-description/', {
+      const response = await fetch(`${API_BASE_URL}/generate-job-description/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: textPrompt })
@@ -121,7 +123,7 @@ const JobPostingModal = ({ isOpen, onClose }: JobPostingModalProps) => {
 
     setIsGeneratingLinkedinPost(true);
     try {
-      const response = await fetch('http://localhost:8000/generate-linkedin-post/', {
+      const response = await fetch(`${API_BASE_URL}/generate-linkedin-post/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobData })

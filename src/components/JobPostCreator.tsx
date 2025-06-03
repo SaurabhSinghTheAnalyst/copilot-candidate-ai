@@ -29,6 +29,8 @@ interface PublishingOptions {
   createLinkedinPost: boolean;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const JobPostCreator = () => {
   const [jobData, setJobData] = useState<JobData>({
     title: '',
@@ -71,7 +73,7 @@ const JobPostCreator = () => {
     setIsGenerating(true);
     try {
       // Call FastAPI backend for LLM-based JD generation
-      const response = await fetch('http://localhost:8000/generate-job-description/', {
+      const response = await fetch(`${API_BASE_URL}/generate-job-description/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: textPrompt })
@@ -119,7 +121,7 @@ const JobPostCreator = () => {
     setGeneratedLinkedinPost(''); // Clear the textarea while generating
     try {
       console.log('Making API call to generate LinkedIn post');
-      const response = await fetch('http://localhost:8000/generate-linkedin-post/', {
+      const response = await fetch(`${API_BASE_URL}/generate-linkedin-post/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobData })

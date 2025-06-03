@@ -42,6 +42,8 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -76,7 +78,7 @@ const ResumeParser = ({ onDataParsed, requirements }: ResumeParserProps) => {
       formData.append('resume', file);
 
       // Call the FastAPI backend
-      const response = await fetch('http://localhost:8000/parse-and-store-resume/', {
+      const response = await fetch(`${API_BASE_URL}/parse-and-store-resume/`, {
         method: 'POST',
         body: formData
       });

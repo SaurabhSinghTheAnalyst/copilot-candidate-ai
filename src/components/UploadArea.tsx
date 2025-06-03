@@ -46,6 +46,8 @@ interface CandidateInfo {
   visaExpiry?: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const UploadArea = () => {
   const [candidateInfo, setCandidateInfo] = useState<CandidateInfo>({
     name: '',
@@ -180,7 +182,7 @@ const UploadArea = () => {
     if (!parsedData) return;
     setIsGeneratingSummary(true);
     try {
-      const response = await fetch('http://localhost:8000/generate-summary/', {
+      const response = await fetch(`${API_BASE_URL}/generate-summary/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedData)
@@ -260,7 +262,7 @@ const UploadArea = () => {
         visa_expiry: candidateInfo.visaExpiry,
         // Add more fields as needed
       };
-      const response = await fetch('http://localhost:8000/save-candidate/', {
+      const response = await fetch(`${API_BASE_URL}/save-candidate/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

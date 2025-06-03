@@ -5,7 +5,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { MapPin, Star, Users } from 'lucide-react';
 interface CarouselCandidate {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   title: string;
   location: string;
   skills: string[];
@@ -15,7 +16,8 @@ interface CarouselCandidate {
 }
 const sampleCandidates: CarouselCandidate[] = [{
   id: '1',
-  name: 'Sarah Chen',
+  first_name: 'Sarah',
+  last_name: 'Chen',
   title: 'Senior React Developer',
   location: 'London, UK',
   skills: ['React', 'TypeScript', 'Node.js', 'GraphQL'],
@@ -24,7 +26,8 @@ const sampleCandidates: CarouselCandidate[] = [{
   workPreference: 'Remote'
 }, {
   id: '2',
-  name: 'Marcus Rodriguez',
+  first_name: 'Marcus',
+  last_name: 'Rodriguez',
   title: 'AI/ML Engineer',
   location: 'Berlin, Germany',
   skills: ['Python', 'TensorFlow', 'LangChain', 'RAG'],
@@ -33,7 +36,8 @@ const sampleCandidates: CarouselCandidate[] = [{
   workPreference: 'Hybrid'
 }, {
   id: '3',
-  name: 'Emily Watson',
+  first_name: 'Emily',
+  last_name: 'Watson',
   title: 'Full Stack Developer',
   location: 'Toronto, Canada',
   skills: ['Vue.js', 'Python', 'PostgreSQL', 'AWS'],
@@ -42,7 +46,8 @@ const sampleCandidates: CarouselCandidate[] = [{
   workPreference: 'Remote'
 }, {
   id: '4',
-  name: 'David Kim',
+  first_name: 'David',
+  last_name: 'Kim',
   title: 'DevOps Engineer',
   location: 'San Francisco, USA',
   skills: ['Kubernetes', 'Docker', 'Terraform', 'AWS'],
@@ -51,7 +56,8 @@ const sampleCandidates: CarouselCandidate[] = [{
   workPreference: 'On-site'
 }, {
   id: '5',
-  name: 'Anna Kowalski',
+  first_name: 'Anna',
+  last_name: 'Kowalski',
   title: 'UX/UI Designer',
   location: 'Amsterdam, Netherlands',
   skills: ['Figma', 'React', 'Design Systems', 'User Research'],
@@ -60,7 +66,8 @@ const sampleCandidates: CarouselCandidate[] = [{
   workPreference: 'Hybrid'
 }, {
   id: '6',
-  name: 'James Thompson',
+  first_name: 'James',
+  last_name: 'Thompson',
   title: 'Backend Engineer',
   location: 'Sydney, Australia',
   skills: ['Go', 'Microservices', 'MongoDB', 'Redis'],
@@ -97,7 +104,7 @@ const CandidateCarousel = () => {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">{candidate.name}</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">{candidate.first_name} {candidate.last_name}</h4>
                       <p className="text-sm text-gray-600 mb-2">{candidate.title}</p>
                       <div className="flex items-center text-xs text-gray-500 mb-3">
                         <MapPin className="w-3 h-3 mr-1" />

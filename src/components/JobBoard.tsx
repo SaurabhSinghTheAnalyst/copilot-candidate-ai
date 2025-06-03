@@ -18,6 +18,8 @@ interface Job {
   created_at?: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const JobBoard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -73,7 +75,7 @@ const JobBoard: React.FC = () => {
       .map(app => app.candidates)
       .filter(Boolean); // Remove null/undefined
 
-    const res = await fetch('http://localhost:8000/api/score-candidates', {
+    const res = await fetch(`${API_BASE_URL}/api/score-candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

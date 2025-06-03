@@ -1,4 +1,3 @@
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 interface CandidateCardProps {
   candidate: {
     id: string;
-    name: string | null;
+    first_name: string | null;
+    last_name: string | null;
     title: string | null;
     location: string | null;
     email: string;
@@ -60,7 +60,7 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-xl font-semibold text-gray-900">{candidate.name || 'Unknown'}</h3>
+              <h3 className="text-xl font-semibold text-gray-900">{`${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'Unknown'}</h3>
               <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getScoreColor(candidate.score)}`}>
                 <Star className="w-4 h-4 inline mr-1" />
                 {candidate.score}% Match

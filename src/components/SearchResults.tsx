@@ -22,6 +22,8 @@ interface CandidateMatch {
   reason: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const SearchResults = ({ query }: SearchResultsProps) => {
   const [sortBy, setSortBy] = useState('score');
   const [filterBy, setFilterBy] = useState('all');
@@ -39,7 +41,7 @@ const SearchResults = ({ query }: SearchResultsProps) => {
     setLoading(true);
     setMatches([]);
     try {
-      const response = await fetch('http://localhost:8000/api/ai-candidate-search', {
+      const response = await fetch(`${API_BASE_URL}/api/ai-candidate-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),

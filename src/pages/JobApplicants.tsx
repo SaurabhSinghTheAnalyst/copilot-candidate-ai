@@ -7,6 +7,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+const API_BASE_URL = import.meta.env.VITE_API_KEY;
+
 const JobApplicants: React.FC = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -61,7 +63,7 @@ const JobApplicants: React.FC = () => {
       candidate_id: app.candidate_id,
       application_id: app.id
     })).filter(Boolean);
-    const res = await fetch('http://localhost:8000/api/score-candidates', {
+    const res = await fetch(`${API_BASE_URL}/api/score-candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -94,7 +96,7 @@ const JobApplicants: React.FC = () => {
     setAiLoading(true);
     // Fetch AI summary and Q&A from backend
     try {
-      const res = await fetch('/api/candidate-background-check', {
+      const res = await fetch(`${API_BASE_URL}/api/candidate-background-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidate }),
